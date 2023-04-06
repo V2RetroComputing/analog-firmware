@@ -304,8 +304,10 @@ bool DELAYED_COPY_CODE(write_config)(bool onetime) {
     bool write_secondary = false;
     bool retval = false;
 
+#ifdef FUNCTION_VGA
     // Disable video output to stop DMA and IRQs
     vga_dpms_sleep();
+#endif
 
     if(is_config_valid(FLASH_CONFIG_PRIMARY) && is_config_valid(FLASH_CONFIG_SECONDARY)) {
         write_secondary = is_primary_config_newer();
@@ -334,8 +336,10 @@ bool DELAYED_COPY_CODE(write_config)(bool onetime) {
         retval = true;
     }
 
+#ifdef FUNCTION_VGA
     // Enable video output now that we are done
     vga_dpms_wake();
+#endif
 
     return retval;
 }
@@ -376,13 +380,17 @@ uint8_t DELAYED_COPY_CODE(write_font)(uint16_t param0, uint16_t param1) {
 uint8_t DELAYED_COPY_CODE(cf_readblock)(uint16_t param0) {
     if(param0 >= (FLASH_SIZE/4096)) return REPLY_EPARAM;
     
+#ifdef FUNCTION_VGA
     // Disable video output to stop DMA and IRQs
     vga_dpms_sleep();
+#endif
 
-    memcpy32(cfbuf, XIP_BASE+(param0 * 4096), 4096);
+    memcpy32((void*)cfbuf, (void*)(XIP_BASE+(param0 * 4096)), 4096);
 
+#ifdef FUNCTION_VGA
     // Enable video output now that we are done
     vga_dpms_wake();
+#endif
 
     return REPLY_OK;
 }
@@ -395,13 +403,17 @@ uint8_t DELAYED_COPY_CODE(cf_writeblock)(uint16_t param0) {
     if(param0 >= (FLASH_SIZE/4096))
         return REPLY_EPARAM;
 
+#ifdef FUNCTION_VGA
     // Disable video output to stop DMA and IRQs
     vga_dpms_sleep();
+#endif
 
     flash_range_program(param0 * 4096, (void*)cfbuf, 4096);
 
+#ifdef FUNCTION_VGA
     // Enable video output now that we are done
     vga_dpms_wake();
+#endif
 
     return REPLY_OK;
 }
@@ -414,13 +426,17 @@ uint8_t DELAYED_COPY_CODE(cf_eraseblock)(uint16_t param0) {
     if(param0 >= (FLASH_SIZE/4096))
         return REPLY_EPARAM;
 
+#ifdef FUNCTION_VGA
     // Disable video output to stop DMA and IRQs
     vga_dpms_sleep();
+#endif
 
     flash_range_erase(param0 * 4096, 4096);
 
+#ifdef FUNCTION_VGA
     // Enable video output now that we are done
     vga_dpms_wake();
+#endif
 
     return REPLY_OK;
 }
