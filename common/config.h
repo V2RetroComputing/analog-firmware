@@ -50,12 +50,13 @@ extern volatile uint8_t terminal_border;
 #ifdef FUNCTION_Z80
 typedef enum {
     SERIAL_LOOP = 0,
+    SERIAL_UART,
     SERIAL_USB,
     SERIAL_WIFI,
     SERIAL_PRINTER,
 } serialmux_t;
 
-extern volatile serialmux_t serialmux;
+extern volatile serialmux_t serialmux[2];
 
 typedef enum {
     USB_HOST_CDC,
@@ -71,6 +72,16 @@ typedef enum {
 } wifimode_t;
 
 extern volatile wifimode_t wifimode;
+
+extern uint8_t wifi_ssid[32];
+extern uint8_t wifi_psk[32];
+
+extern uint32_t wifi_address;
+extern uint32_t wifi_netmask;
+
+extern uint8_t jd_host[32];
+extern uint16_t jd_port;
+
 #endif
 
 typedef enum {

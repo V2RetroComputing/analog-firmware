@@ -3,8 +3,14 @@
 #include "common/flash.h"
 #include "common/build.h"
 #include "common/dmacopy.h"
+#ifdef FUNCTION_VGA
 #include "vga/render.h"
 #include "vga/vgaout.h"
+#endif
+#ifdef FUNCTION_Z80
+#include "z80/z80buf.h"
+#endif
+
 #include <string.h>
 
 volatile compat_t cfg_machine = MACHINE_AUTO;
@@ -12,11 +18,17 @@ volatile compat_t current_machine = MACHINE_AUTO;
 
 #ifdef FUNCTION_Z80
 volatile usbmux_t usbmux;
-volatile serialmux_t serialmux;
+volatile serialmux_t serialmux[2];
 volatile wifimode_t wifimode;
 
-volatile uint8_t wifi_ssid[32];
-volatile uint8_t wifi_psk[32];
+uint8_t wifi_ssid[32];
+uint8_t wifi_psk[32];
+
+uint32_t wifi_address;
+uint32_t wifi_netmask;
+
+uint8_t jd_host[32];
+uint16_t jd_port;
 #endif
 
 #ifdef FUNCTION_VGA
@@ -67,6 +79,9 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
             case CFGTOKEN_HOST_PRAVETZ:
                 cfg_machine = MACHINE_PRAVETZ;
                 break;
+            case CFGTOKEN_HOST_BASIS:
+                cfg_machine = MACHINE_BASIS;
+                break;
 #ifdef FUNCTION_VGA
             case CFGTOKEN_MONO_00:
                 mono_palette = (config[i] >> 16) & 0xF;
@@ -79,26 +94,29 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
                 break;
 #else
             case CFGTOKEN_MUX_LOOP:
-                serialmux = SERIAL_LOOP;
+                serialmux[(config[i] >> 16) & 1] = SERIAL_LOOP;
+                break;
+            case CFGTOKEN_MUX_UART:
+                serialmux[(config[i] >> 16) & 1] = SERIAL_UART;
                 break;
             case CFGTOKEN_MUX_USB:
-                serialmux = SERIAL_USB;
+                serialmux[(config[i] >> 16) & 1] = SERIAL_USB;
                 break;
             case CFGTOKEN_MUX_WIFI:
-                serialmux = SERIAL_WIFI;
+                serialmux[(config[i] >> 16) & 1] = SERIAL_WIFI;
                 break;
             case CFGTOKEN_MUX_PRN:
-                serialmux = SERIAL_PRINTER;
+                serialmux[(config[i] >> 16) & 1] = SERIAL_PRINTER;
                 break;
             case CFGTOKEN_SER_BAUD:
-                //baud = config[i+1];
+                sio[(config[i] >> 16) & 1].baudrate = config[i+1];
                 break;
-            case CFGTOKEN_USB_HOST:
-                usbmux = USB_HOST_CDC;
-                break;
-            case CFGTOKEN_USB_GUEST:
-                usbmux = USB_GUEST_CDC;
-                break;
+//            case CFGTOKEN_USB_HOST:
+//                usbmux = USB_HOST_CDC;
+//                break;
+//            case CFGTOKEN_USB_GUEST:
+//                usbmux = USB_GUEST_CDC;
+//                break;
 //            case CFGTOKEN_USB_MIDI:
 //                usbmux = USB_GUEST_MIDI;
 //              break;
@@ -109,25 +127,25 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
                 wifimode = WIFI_CLIENT;
                 break;
             case CFGTOKEN_WIFI_SSID:
-//                memset((char*)wifi_ssid, 0, sizeof(wifi_ssid));
-//                strncpy((char*)wifi_ssid, (char*)(config+i+1), (config[i] >> 24));
+                memset((char*)wifi_ssid, 0, sizeof(wifi_ssid));
+                strncpy((char*)wifi_ssid, (char*)(config+i+1), (config[i] >> 24));
                 break;
             case CFGTOKEN_WIFI_PSK:
-//                memset((char*)wifi_psk, 0, sizeof(wifi_psk));
-//                strncpy((char*)wifi_psk, (char*)(config+i+1), (config[i] >> 24));
+                memset((char*)wifi_psk, 0, sizeof(wifi_psk));
+                strncpy((char*)wifi_psk, (char*)(config+i+1), (config[i] >> 24));
                 break;
             case CFGTOKEN_WIFI_IP:
-//                wifi_address = config[i+1];
+                wifi_address = config[i+1];
                 break;
             case CFGTOKEN_WIFI_NM:
-//                wifi_netmask = config[i+1];
+                wifi_netmask = config[i+1];
                 break;
             case CFGTOKEN_JD_HOST:
-//                memset((uint8_t*)jd_host, 0, sizeof(jd_host));
-//                strncpy(jd_host, (char*)(config+i+1), (config[i] >> 24));
+                memset((uint8_t*)jd_host, 0, sizeof(jd_host));
+                strncpy(jd_host, (char*)(config+i+1), (config[i] >> 24));
                 break;
             case CFGTOKEN_JD_PORT:
-//                jd_port = config[i+1];
+                jd_port = config[i+1];
                 break;
 #endif
         }
@@ -141,7 +159,8 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
 
 void DELAYED_COPY_CODE(default_config)() {
 #ifdef FUNCTION_Z80
-    serialmux = SERIAL_LOOP;
+    serialmux[0] = SERIAL_USB;
+    serialmux[1] = SERIAL_LOOP;
     usbmux = USB_GUEST_CDC;
     wifimode = WIFI_AP;
     strcpy((char*)wifi_ssid, "V2RetroNet");
@@ -172,11 +191,20 @@ int DELAYED_COPY_CODE(make_config)(uint8_t rev) {
     case MACHINE_IIGS:
         config_temp[i++] = CFGTOKEN_HOST_IIGS;
         break;
+    case MACHINE_PRAVETZ:
+        config_temp[i++] = CFGTOKEN_HOST_PRAVETZ;
+        break;
+    case MACHINE_BASIS:
+        config_temp[i++] = CFGTOKEN_HOST_BASIS;
+        break;
     }
 #ifdef FUNCTION_Z80
-    switch(serialmux) {
+    switch(serialmux[0]) {
     case SERIAL_USB:
         config_temp[i++] = CFGTOKEN_MUX_USB;
+        break;
+    case SERIAL_UART:
+        config_temp[i++] = CFGTOKEN_MUX_UART;
         break;
     case SERIAL_WIFI:
         config_temp[i++] = CFGTOKEN_MUX_WIFI;
@@ -187,6 +215,24 @@ int DELAYED_COPY_CODE(make_config)(uint8_t rev) {
     default:
     case SERIAL_LOOP:
         config_temp[i++] = CFGTOKEN_MUX_LOOP;
+        break;
+    }
+    switch(serialmux[1]) {
+    case SERIAL_USB:
+        config_temp[i++] = CFGTOKEN_MUX_USB | 0x10000;
+        break;
+    case SERIAL_UART:
+        config_temp[i++] = CFGTOKEN_MUX_UART | 0x10000;
+        break;
+    case SERIAL_WIFI:
+        config_temp[i++] = CFGTOKEN_MUX_WIFI | 0x10000;
+        break;
+    case SERIAL_PRINTER:
+        config_temp[i++] = CFGTOKEN_MUX_PRN | 0x10000;
+        break;
+    default:
+    case SERIAL_LOOP:
+        config_temp[i++] = CFGTOKEN_MUX_LOOP | 0x10000;
         break;
     }
     switch(usbmux) {

@@ -92,7 +92,6 @@ target_sources(v2-analog${BINARY_TAGS} PUBLIC
     common/dmacopy.c
     common/buffers.c
     common/flash.c
-    common/usb_descriptors.c
 )
 
 if(${CMAKE_CURRENT_BINARY_DIR} MATCHES "-vga")
@@ -115,6 +114,7 @@ elseif(${CMAKE_CURRENT_BINARY_DIR} MATCHES "-z80")
 target_sources(v2-analog${BINARY_TAGS} PUBLIC
     z80/businterface.c
     z80/z80main.c
+    z80/usb_descriptors.c
 )
 endif()
 
@@ -123,14 +123,19 @@ target_link_libraries(v2-analog${BINARY_TAGS} PUBLIC
     pico_multicore
     pico_stdlib
     pico_unique_id
-    tinyusb_device
-    tinyusb_board
     hardware_resets
     hardware_irq
     hardware_dma
     hardware_pio
     hardware_flash
 )
+
+if(${CMAKE_CURRENT_BINARY_DIR} MATCHES "-z80")
+target_link_libraries(v2-analog${BINARY_TAGS} PUBLIC
+    tinyusb_device
+    tinyusb_board
+)
+endif()
 
 if(${PICO_BOARD} MATCHES "pico_w")
 target_link_libraries(v2-analog${BINARY_TAGS} PUBLIC

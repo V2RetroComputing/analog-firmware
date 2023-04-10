@@ -57,7 +57,7 @@ void __time_critical_func(z80_businterface)(uint32_t address, uint32_t value) {
             // Ideally this code should only run once.
             new_pcpi_reg = apple_memory + (address & 0xFFF0);
             if((uint32_t)new_pcpi_reg != (uint32_t)pcpi_reg) {
-                memcpy(new_pcpi_reg, pcpi_reg, 16);
+                memcpy((void*)new_pcpi_reg, (void*)pcpi_reg, 16);
                 pcpi_reg = new_pcpi_reg;
             }
 

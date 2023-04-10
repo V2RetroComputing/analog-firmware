@@ -146,6 +146,13 @@ extern uint32_t __ram_delayed_copy_start__[];
 extern uint32_t __ram_delayed_copy_end__[];
 
 int main() {
+#if 0
+    // OTA
+    if(*(uint32_t*)FLASH_RESERVED != 0xFFFFFFFF) {
+        flash_ota();
+    }
+#endif
+
     // Adjust system clock for better dividing into other clocks
     set_sys_clock_khz(CONFIG_SYSCLOCK*1000, true);
 

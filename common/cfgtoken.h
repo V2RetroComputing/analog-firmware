@@ -19,6 +19,7 @@
 #define CFGTOKEN_HOST_BASIS   0x00004248 // "HB\x00\x00" Basis 108
 
 #define CFGTOKEN_MUX_LOOP     0x00004C53 // "SL\x00\x00" Serial Loopback
+#define CFGTOKEN_MUX_UART     0x00005353 // "SS\x00\x00" UART
 #define CFGTOKEN_MUX_USB      0x00005553 // "SU\x00\x00" USB CDC
 #define CFGTOKEN_MUX_WIFI     0x00005753 // "SW\x00\x00" WiFi Modem
 #define CFGTOKEN_MUX_PRN      0x00005053 // "SP\x00\x00" WiFi Printer

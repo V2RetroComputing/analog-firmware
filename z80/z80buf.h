@@ -19,3 +19,22 @@ extern volatile uint8_t *pcpi_reg;
 #define set_6502_stat { pcpi_reg[3] |= 0x80; }
 #define rd_6502_stat (pcpi_reg[3] >> 7)
 
+typedef struct ctc_s {
+    uint8_t control;
+    uint8_t counter;
+    uint8_t preload;
+} ctc_t;
+
+extern volatile ctc_t ctc[4];
+extern volatile uint8_t ctc_vector;
+
+typedef struct sio_s {
+    uint8_t control[8];
+    uint8_t status[2];
+    uint8_t data;
+    uint8_t datavalid;
+    uint32_t baudrate;
+} sio_t;
+
+extern volatile sio_t sio[2];
+extern volatile uint8_t sio_vector;
