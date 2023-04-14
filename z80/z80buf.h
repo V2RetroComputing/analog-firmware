@@ -38,3 +38,10 @@ typedef struct sio_s {
 
 extern volatile sio_t sio[2];
 extern volatile uint8_t sio_vector;
+
+extern uint8_t auart_read(bool port);
+extern uint8_t zuart_peek(bool port);
+extern uint8_t auart_status(bool port);
+extern uint8_t auart_command(bool port, uint8_t value);
+extern uint8_t auart_control(bool port, uint8_t value);
+extern uint8_t zuart_write(bool port, uint8_t value);

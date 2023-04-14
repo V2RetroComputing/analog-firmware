@@ -43,37 +43,45 @@ static void __noinline __time_critical_func(core1_loop)() {
 
                 // Config memory in card slot-rom address space
                 if(ACCESS_WRITE) {
-                    if((address & 0xFF) == 0xED) {
+                    if((address & 0xFF) == 0xEC) {
                         apple_memory[address] = value;
-                        cfptr = (cfptr & 0x1F00) | value;
-                        apple_memory[address] = cfbuf[cfptr];
+                        cfptr = (cfptr & 0x0F00) | value;
+                        apple_memory[address+2] = cfbuf[cfptr]; // $CnEE
+                        apple_memory[address+3] = cfbuf[cfptr]; // $CnEF
                     }
-                    if((address & 0xFF) == 0xEE) {
-                        apple_memory[address] = value & 0x1F;
-                        cfptr = ((cfptr & 0xFF) | (value << 8)) & 0x1FFF;
-                        apple_memory[address] = cfbuf[cfptr];
+                    if((address & 0xFF) == 0xED) {
+                        apple_memory[address] = value & 0x0F;
+                        cfptr = ((cfptr & 0xFF) | (((uint16_t)value) << 8)) & 0xFFF;
+                        apple_memory[address+1] = cfbuf[cfptr]; // $CnEE
+                        apple_memory[address+2] = cfbuf[cfptr]; // $CnEF
                     }
                     if((address & 0xFF) == 0xEF) {
-                        apple_memory[address] = value;
                         cfbuf[cfptr] = value;
+                        cfptr = (cfptr + 1) & 0x0FFF;
+                        apple_memory[address-1] = cfbuf[cfptr]; // $CnEE
+                        apple_memory[address]   = cfbuf[cfptr]; // $CnEF
                     }
                     if((address & 0xFF) >= 0xF0) {
                         apple_memory[address] = value;
                     }
-                }
-                if((address & 0xFF) == 0xEF) {
-                    cfptr = (cfptr + 1) & 0x1FFF;
-                    apple_memory[address] = cfbuf[cfptr];
+                } else if((address & 0xFF) == 0xEE) {
+                    cfptr = (cfptr + 1) & 0x0FFF;
+                    apple_memory[address]   = cfbuf[cfptr]; // $CnEE
+                    apple_memory[address+1] = cfbuf[cfptr]; // $CnEF
                     apple_memory[address-1] = (cfptr >> 8) & 0xff;
                     apple_memory[address-2] = cfptr & 0xff;
                 }
-
-                // Stop further processing by businterface
-                continue;
             }
 #ifdef FUNCTION_VGA
         } else if(current_machine == MACHINE_AUTO) {
-            if((apple_memory[0x0417] == 0xE7) && (apple_memory[0x416] == 0xC9)) { // Apple IIgs
+            if((apple_memory[0x0403] == 0xD8) && (apple_memory[0x404] == 0xE5)) { // ROMXe
+                current_machine = MACHINE_IIE;
+                internal_flags |= IFLAGS_IIE_REGS;
+                internal_flags &= ~IFLAGS_IIGS_REGS;
+            } else if((apple_memory[0x0412] == 0xC5) && (apple_memory[0x0413] == 0xD8)) { // ROMX
+                current_machine = MACHINE_II;
+                internal_flags &= ~(IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
+            } else if((apple_memory[0x0417] == 0xE7) && (apple_memory[0x416] == 0xC9)) { // Apple IIgs
                 current_machine = MACHINE_IIGS;
                 internal_flags &= ~IFLAGS_IIE_REGS;
                 internal_flags |= IFLAGS_IIGS_REGS;

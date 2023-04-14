@@ -10,6 +10,7 @@ build_firmware() {
     ( mkdir -p build/$1 && cd build/$1 && cmake ../.. )
   fi
   make -C build/$1
+  #tools/mksparse build/$1/$1.bin build/$1/$1.ota
 }
 
 build_firmware v2-analog-lc-4ns-z80

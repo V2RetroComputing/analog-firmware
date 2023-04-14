@@ -6,6 +6,8 @@
 #ifdef FUNCTION_VGA
 #include "vga/render.h"
 #include "vga/vgaout.h"
+extern volatile uint8_t romx_textbank;
+extern volatile uint8_t romx_changed;
 #endif
 #ifdef FUNCTION_Z80
 #include "z80/z80buf.h"
@@ -83,6 +85,10 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
                 cfg_machine = MACHINE_BASIS;
                 break;
 #ifdef FUNCTION_VGA
+            case CFGTOKEN_FONT_00:
+                romx_textbank = (config[i] >> 16) & 0x2F;
+                romx_changed = 1;
+                break;
             case CFGTOKEN_MONO_00:
                 mono_palette = (config[i] >> 16) & 0xF;
                 break;
@@ -128,11 +134,11 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
                 break;
             case CFGTOKEN_WIFI_SSID:
                 memset((char*)wifi_ssid, 0, sizeof(wifi_ssid));
-                strncpy((char*)wifi_ssid, (char*)(config+i+1), (config[i] >> 24));
+                strncpy((char*)wifi_ssid, (char*)(&config[i+1]), (config[i] >> 24));
                 break;
             case CFGTOKEN_WIFI_PSK:
                 memset((char*)wifi_psk, 0, sizeof(wifi_psk));
-                strncpy((char*)wifi_psk, (char*)(config+i+1), (config[i] >> 24));
+                strncpy((char*)wifi_psk, (char*)(&config[i+1]), (config[i] >> 24));
                 break;
             case CFGTOKEN_WIFI_IP:
                 wifi_address = config[i+1];
@@ -142,7 +148,7 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
                 break;
             case CFGTOKEN_JD_HOST:
                 memset((uint8_t*)jd_host, 0, sizeof(jd_host));
-                strncpy(jd_host, (char*)(config+i+1), (config[i] >> 24));
+                strncpy(jd_host, (char*)(&config[i+1]), (config[i] >> 24));
                 break;
             case CFGTOKEN_JD_PORT:
                 jd_port = config[i+1];
@@ -169,13 +175,13 @@ void DELAYED_COPY_CODE(default_config)() {
     cfg_machine = MACHINE_AUTO;
 }
 
-int DELAYED_COPY_CODE(make_config)(uint8_t rev) {
+int DELAYED_COPY_CODE(make_config)(uint32_t rev) {
     int i = 0;
 
     memset(config_temp, 0, sizeof(config_temp));
 
     config_temp[i++] = NEWCONFIG_MAGIC;
-    config_temp[i++] = CFGTOKEN_REVISION | (((uint16_t)rev) << 16);
+    config_temp[i++] = CFGTOKEN_REVISION | ((rev & 0xff) << 16);
 
     switch(cfg_machine) {
     default:
@@ -258,21 +264,19 @@ int DELAYED_COPY_CODE(make_config)(uint8_t rev) {
     }
 
     config_temp[i] = CFGTOKEN_WIFI_SSID | (((uint32_t)strlen((char*)wifi_ssid)+1) << 24);
-    strcpy((char*)(config_temp+i+1), (char*)wifi_ssid);
+    strcpy((char*)(&config_temp[i+1]), (char*)wifi_ssid);
     i += 1 + (((config_temp[i] >> 24) + 3) >> 2);
 
     config_temp[i] = CFGTOKEN_WIFI_PSK | (((uint32_t)strlen((char*)wifi_psk)+1) << 24);
-    strcpy((char*)(config_temp+i+1), (char*)wifi_psk);
+    strcpy((char*)(&config_temp[i+1]), (char*)wifi_psk);
     i += 1 + (((config_temp[i] >> 24) + 3) >> 2);
 #endif
 
 #ifdef FUNCTION_VGA
+    config_temp[i++] = CFGTOKEN_FONT_00 | ((romx_textbank & 0x2F) << 20);
     config_temp[i++] = CFGTOKEN_MONO_00 | ((mono_palette & 0xF) << 20);
     config_temp[i++] = CFGTOKEN_TBCOLOR | ((terminal_tbcolor & 0xFF) << 16);
     config_temp[i++] = CFGTOKEN_BORDER | ((terminal_border & 0xF) << 16);
-
-    // TODO: Font
-    //config_temp[i++] = CFGTOKEN_FONTSLOT | ((terminal_font & 0x1F) << 16);
 #endif
     config_temp[i++] = NEWCONFIG_EOF_MARKER;
 
@@ -322,6 +326,7 @@ bool DELAYED_COPY_CODE(is_primary_config_newer)() {
     
     return (a == ((b+1) & 0xff));
 }
+
 
 bool DELAYED_COPY_CODE(read_config)() {
     if(is_config_valid(FLASH_CONFIG_ONETIME)) {
@@ -390,38 +395,33 @@ bool DELAYED_COPY_CODE(write_config)(bool onetime) {
     return retval;
 }
 
-#ifdef FUNCTION_VGA
-uint8_t DELAYED_COPY_CODE(test_font)(uint16_t param0) {
-    int i;
+uint8_t DELAYED_COPY_CODE(get_config_block)() {
+    uint16_t last_config_block;
+    uint16_t next_config_block;
 
-    for(i = 0; i < 4096; i++) {
-        character_rom[i] = apple_memory[param0+i];
+    last_config_block = (FLASH_CONFIG_PRIMARY-XIP_BASE) / 4096;
+    next_config_block = last_config_block;
+
+    if(is_config_valid(FLASH_CONFIG_PRIMARY)) {
+        if(!is_config_valid(FLASH_CONFIG_SECONDARY) || (is_primary_config_newer())) {
+            last_config_block = (FLASH_CONFIG_PRIMARY-XIP_BASE) / 4096;
+            next_config_block = (FLASH_CONFIG_SECONDARY-XIP_BASE) / 4096;
+        } else {
+            last_config_block = (FLASH_CONFIG_SECONDARY-XIP_BASE) / 4096;
+            next_config_block = (FLASH_CONFIG_PRIMARY-XIP_BASE) / 4096;
+        }
+    } else if(is_config_valid(FLASH_CONFIG_SECONDARY)) {
+        last_config_block = (FLASH_CONFIG_SECONDARY-XIP_BASE) / 4096;
+        next_config_block = (FLASH_CONFIG_PRIMARY-XIP_BASE) / 4096;
     }
-
-    return REPLY_OK;
-}
-
-uint8_t DELAYED_COPY_CODE(write_font)(uint16_t param0, uint16_t param1) {
-    int i;
     
-    if(param1 > 0x27) return REPLY_EPARAM;
-
-    // Disable video output to stop DMA and IRQs
-    vga_dpms_sleep();
-
-    for(i = 0; i < 4096; i++) {
-        character_rom[i] = apple_memory[param0+i];
-    }
-
-    flash_range_erase((FLASH_FONT(param1)-XIP_BASE), FONT_SIZE);
-    flash_range_program((FLASH_FONT(param1)-XIP_BASE), character_rom, FONT_SIZE);
-
-    // Enable video output now that we are done
-    vga_dpms_wake();
+    config_rpybuf[5] = (next_config_block >> 8) & 0xFF;
+    config_rpybuf[4] = (next_config_block >> 0) & 0xFF;
+    config_rpybuf[3] = (last_config_block >> 8) & 0xFF;
+    config_rpybuf[2] = (last_config_block >> 0) & 0xFF;
 
     return REPLY_OK;
 }
-#endif
 
 uint8_t DELAYED_COPY_CODE(cf_readblock)(uint16_t param0) {
     if(param0 >= (FLASH_SIZE/4096)) return REPLY_EPARAM;
@@ -454,7 +454,7 @@ uint8_t DELAYED_COPY_CODE(cf_writeblock)(uint16_t param0) {
     vga_dpms_sleep();
 #endif
 
-    flash_range_program(param0 * 4096, (void*)cfbuf, 4096);
+    flash_range_program(((uint32_t)param0) * 4096, (void*)cfbuf, 4096);
 
 #ifdef FUNCTION_VGA
     // Enable video output now that we are done
@@ -477,7 +477,66 @@ uint8_t DELAYED_COPY_CODE(cf_eraseblock)(uint16_t param0) {
     vga_dpms_sleep();
 #endif
 
-    flash_range_erase(param0 * 4096, 4096);
+    flash_range_erase(((uint32_t)param0) * 4096, 4096);
+
+#ifdef FUNCTION_VGA
+    // Enable video output now that we are done
+    vga_dpms_wake();
+#endif
+
+    return REPLY_OK;
+}
+
+#ifdef FUNCTION_VGA
+uint8_t DELAYED_COPY_CODE(test_font)() {
+    int i;
+
+    for(i = 0; i < 2048; i++) {
+        character_rom[i] = cfbuf[i];
+    }
+    userfont = true;
+
+    return REPLY_OK;
+}
+#endif
+
+uint8_t DELAYED_COPY_CODE(read_font)(uint16_t param0) {
+    if(param0 > 0x27) return REPLY_EPARAM;
+
+    return cf_readblock((FLASH_FONT(param0)-XIP_BASE) / 4096);
+}
+
+uint8_t DELAYED_COPY_CODE(erase_font)(uint16_t param0) {
+    int i;
+    
+    if(param0 > 0x27) return REPLY_EPARAM;
+
+#ifdef FUNCTION_VGA
+    // Disable video output to stop DMA and IRQs
+    vga_dpms_sleep();
+#endif
+
+    flash_range_erase((FLASH_FONT(param0)-XIP_BASE), FONT_SIZE);
+
+#ifdef FUNCTION_VGA
+    // Enable video output now that we are done
+    vga_dpms_wake();
+#endif
+
+    return REPLY_OK;
+}
+
+uint8_t DELAYED_COPY_CODE(write_font)(uint16_t param0) {
+    int i;
+    
+    if(param0 > 0x27) return REPLY_EPARAM;
+
+#ifdef FUNCTION_VGA
+    // Disable video output to stop DMA and IRQs
+    vga_dpms_sleep();
+#endif
+
+    flash_range_program((FLASH_FONT(param0)-XIP_BASE), (void*)cfbuf, FONT_SIZE);
 
 #ifdef FUNCTION_VGA
     // Enable video output now that we are done
@@ -516,22 +575,37 @@ void DELAYED_COPY_CODE(config_handler)() {
     config_rpybuf[0] = REPLY_BUSY;
 
     switch(config_cmdbuf[0]) {
-#ifdef FUNCTION_VGA
         case 'C':
             switch(config_cmdbuf[1]) {
                 default:
                     retval = REPLY_ECMD;
                     break;
+#ifdef FUNCTION_VGA
                 case 'T':
                     // One-time load of font data (lost at reboot)
-                    retval = test_font(param0);
-                case 'I':
+                    retval = test_font();
+                case 'S':
+                    romx_textbank = param0 & 0x2F;
+                    romx_changed = 1;
+                    retval = REPLY_OK;
+#endif
+                case 'r':
+                    // Read font from flash
+                    retval = read_font(param0);
+                    cfptr = 0;
+                    break;
+                case 'w':
                     // Save font to flash
-                    retval = write_font(param0, param1);
+                    retval = write_font(param0);
+                    cfptr = 0;
+                    break;
+                case 'e':
+                    // Erase font from flash
+                    retval = erase_font(param0);
+                    cfptr = 0;
                     break;
             }
             break;
-#endif
         case 'H':
             retval = REPLY_OK;
             switch(config_cmdbuf[1]) {
@@ -578,6 +652,11 @@ void DELAYED_COPY_CODE(config_handler)() {
             switch(config_cmdbuf[1]) {
                 default:
                     retval = REPLY_ECMD;
+                    break;
+                case 'c':
+                    // Current Config Block
+                    retval = get_config_block();
+                    cfptr = 0;
                     break;
                 case 'r':
                     // Read block

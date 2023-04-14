@@ -45,7 +45,9 @@ static void DELAYED_COPY_CODE(render_hires_line)(bool p2, uint line) {
     const uint8_t *line_mem = (const uint8_t *)((p2 ? hgr_p2 : hgr_p1) + hires_line_to_mem_offset(line));
 
     // Pad 40 pixels on the left to center horizontally
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_31) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
 
     // Each hires byte contains 7 pixels which may be shifted right 1/2 a pixel. That is
     // represented here by 14 'dots' to precisely describe the half-pixel positioning.
@@ -105,7 +107,9 @@ static void DELAYED_COPY_CODE(render_hires_line)(bool p2, uint line) {
     }
 
     // Pad 40 pixels on the right to center horizontally
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_31) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
 
     sl->length = sl_pos;
     sl->repeat_count = 1;

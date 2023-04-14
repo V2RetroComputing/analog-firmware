@@ -157,7 +157,7 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
             }
         } else if(romx_unlocked == 3) {
             if(romx_type == 0xFA) {
-                if((address >> 4) == 0xF81) {
+                if((address & 0xFFF0) == 0xF810) {
                     romx_textbank = address & 0xF;
                 }
                 if(address == 0xF851) {
@@ -165,10 +165,10 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                     romx_unlocked = 0;
                 }
             } else if(romx_type == 0xCA) {
-                if((address >> 4) == 0xCFD) {
+                if((address & 0xFFF0) == 0xCFD0) {
                     romx_textbank = address & 0xF;
                 }
-                if((address >> 4) == 0xCFE) {
+                if((address & 0xFFF0) == 0xCFE0) {
                     romx_changed = 1;
                     romx_unlocked = 0;
                 }
@@ -237,8 +237,8 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                 terminal_memory[terminal_row*80+terminal_col] = value;
                 break;
             case 0x0B:
-                if(value <= 0x27) {
-                    romx_textbank = value;
+                if((value & 0xFF) <= 0x27) {
+                    romx_textbank = (value & 0xFF);
                     romx_changed = 1;
                 }
                 break;

@@ -27,6 +27,183 @@ volatile uint8_t sio_vector;
 
 #define Z80break (z80_res || (config_cmdbuf[7] == 0) || (!z80_cycle++))
 
+uint8_t DELAYED_COPY_CODE(zuart_read)(bool port) {
+    uint8_t rv = 0;
+
+    if(sio[port].datavalid) {
+        rv = sio[port].data;
+        sio[port].datavalid = 0;
+    }
+
+    switch(serialmux[port]) {
+    case SERIAL_LOOP:
+        break;
+    case SERIAL_USB:
+        if(tud_cdc_n_available(port)) {
+            sio[port].data = tud_cdc_n_read_char(port);
+            sio[port].datavalid = 1;
+        }
+        break;
+    case SERIAL_UART:
+        if(port) {
+            if(uart_is_readable(uart1)) {
+                sio[port].data = uart_getc(uart1);
+                sio[port].datavalid = 1;
+            }
+        } else {
+            if(uart_is_readable(uart0)) {
+                sio[port].data = uart_getc(uart0);
+                sio[port].datavalid = 1;
+            }
+        }
+        break;
+    }
+    
+    return rv;
+}
+
+uint8_t DELAYED_COPY_CODE(zuart_peek)(bool port) {
+    uint8_t rv = 0;
+
+    if(sio[port].datavalid) {
+        rv = sio[port].data;
+    }
+
+    return rv;
+}
+
+uint8_t DELAYED_COPY_CODE(auart_read)(bool port) {
+    zuart_read(port);
+    return zuart_peek(port);
+}
+
+uint8_t DELAYED_COPY_CODE(auart_status)(bool port) {
+    uint8_t rv;
+
+    if(!sio[port].datavalid) {
+        zuart_read(port);
+    }
+
+    rv = sio[port].datavalid ? 0x08 : 0x00;
+
+    switch(serialmux[port]) {
+    case SERIAL_LOOP:
+        rv |= ((sio[port].control[5] & 0x02) ? 0x40 : 0x00) |
+             ((sio[port].control[5] & 0x80) ? 0x20 : 0x00) |
+             (sio[port].datavalid ? 0x00 : 0x10);
+        break;
+    case SERIAL_USB:
+        rv |= ((tud_cdc_n_get_line_state(port) & 2) ? 0x00 : 0x40) | 
+             (tud_cdc_n_connected(port) ? 0x00 : 0x20) |
+             (tud_cdc_n_write_available(port) ? 0x10 : 0x00);
+        break;
+    case SERIAL_UART:
+        if(port) {
+            rv |= (uart_is_writable(uart1) ? 0x10 : 0x00);
+        } else {
+            rv |= (uart_is_writable(uart0) ? 0x10 : 0x00);
+        }
+        break;
+    }
+
+    return rv;
+}
+
+uint8_t DELAYED_COPY_CODE(auart_control)(bool port, uint8_t value) {
+    return value;
+}
+
+uint8_t DELAYED_COPY_CODE(auart_command)(bool port, uint8_t value) {
+    if(value & 0x1) {
+        sio[port].control[5] |= 0x80;
+    } else {
+        sio[port].control[5] &= ~0x80;
+    }
+    if(value & 0xC) {
+        sio[port].control[5] |= 0x02;
+    } else {
+        sio[port].control[5] &= ~0x02;
+    }
+
+    return value;
+}
+
+uint8_t DELAYED_COPY_CODE(zuart_write)(bool port, uint8_t value) {
+    switch(serialmux[port]) {
+    case SERIAL_LOOP:
+        if(sio[port].datavalid) {
+            sio[port].status[1] |= 0x20;
+        }
+        sio[port].datavalid = 1;
+        sio[port].data = value;
+        break;
+    case SERIAL_UART:
+        if(tud_cdc_n_write_available(port)) {
+            tud_cdc_n_write_char(port, value);
+        }
+        break;
+    case SERIAL_USB:
+        if(port) {
+            if(uart_is_writable(uart1)) {
+                uart_putc(uart1, value);
+            }
+        } else {
+            if(uart_is_writable(uart0)) {
+                uart_putc(uart0, value);
+            }
+        }
+        break;
+    }
+    return value;
+}
+
+uint8_t DELAYED_COPY_CODE(zuart_status)(bool port) {
+    uint8_t rv = 0;
+
+    
+    switch(sio[port].control[0] & 0x7) {
+    case 0:
+        if(!sio[port].datavalid) {
+            zuart_read(port);
+        }
+
+        rv = sio[port].datavalid ? 0x01 : 0x00;
+
+        switch(serialmux[port]) {
+        case SERIAL_LOOP:
+            rv |= ((sio[port].control[5] & 0x02) ? 0x20 : 0x00) |
+                 ((sio[port].control[5] & 0x80) ? 0x08 : 0x00) |
+                 (sio[port].datavalid ? 0x00 : 0x04);
+            break;
+        case SERIAL_USB:
+            rv |= ((tud_cdc_n_get_line_state(port) & 2) ? 0x20 : 0x00) | 
+                 (tud_cdc_n_connected(port) ? 0x08 : 0x00) |
+                 (tud_cdc_n_write_available(port) ? 0x04 : 0x00);
+            break;
+        case SERIAL_UART:
+            if(port) {
+                rv |= 0x20 | 
+                     (uart_is_writable(uart1) ? 0x00 : 0x04);
+            } else {
+                rv |= 0x20 | 
+                     (uart_is_writable(uart0) ? 0x00 : 0x04);
+            }
+            break;
+        }
+        break;
+    case 1:
+        rv = sio[(port)].status[1];
+        break;
+    case 2:
+        if(port)
+            rv = sio_vector;
+        break;
+    }
+    sio[(port)].control[0] &= 0xF8;
+
+    return rv;
+}
+
 uint8_t DELAYED_COPY_CODE(cpu_in)(uint16_t address) {
     uint8_t rv = 0;
     if(address & 0x80) {
@@ -42,69 +219,11 @@ uint8_t DELAYED_COPY_CODE(cpu_in)(uint16_t address) {
             break;
         case 0xFC:
         case 0xFE:
-            switch(serialmux[(address & 0x01)]) {
-            case SERIAL_LOOP:
-                if(sio[(address & 0x01)].datavalid) {
-                    sio[(address & 0x01)].datavalid = 0;
-                    rv = sio[(address & 0x01)].data;
-                }
-                break;
-            case SERIAL_USB:
-                if(tud_cdc_n_available((address & 0x01))) {
-                    rv = tud_cdc_n_read_char((address & 0x01));
-                }
-                break;
-            case SERIAL_UART:
-                if(address & 0x01) {
-                    if(uart_is_readable(uart1)) {
-                        rv = uart_getc(uart1);
-                    }
-                } else {
-                    if(uart_is_readable(uart0)) {
-                        rv = uart_getc(uart0);
-                    }
-                }
-                break;
-            }
+            rv = zuart_read(address & 0x02);
             break;
         case 0xFD:
         case 0xFF:
-            switch(sio[(address & 0x01)].control[0] & 0x7) {
-            case 0:
-                switch(serialmux[(address & 0x01)]) {
-                case SERIAL_LOOP:
-                    rv = ((sio[(address & 0x01)].control[5] & 0x02) ? 0x20 : 0x00) |
-                         ((sio[(address & 0x01)].control[5] & 0x80) ? 0x08 : 0x00) |
-                         (sio[(address & 0x01)].datavalid ? 0x01 : 0x04);
-                    break;
-                case SERIAL_USB:
-                    rv = ((tud_cdc_n_get_line_state(address & 0x01) & 2) ? 0x20 : 0x00) | 
-                         (tud_cdc_n_connected(address & 0x01) ? 0x08 : 0x00) |
-                         (tud_cdc_n_write_available(address & 0x01) ? 0x04 : 0x00) |
-                         (tud_cdc_n_available(address & 0x01) ? 0x01 : 0x00);
-                    break;
-                case SERIAL_UART:
-                    if(address & 0x01) {
-                        rv = 0x20 | 
-                             (uart_is_writable(uart1) ? 0x00 : 0x04) |
-                             (uart_is_readable(uart1) ? 0x01 : 0x00);
-                    } else {
-                        rv = 0x20 | 
-                             (uart_is_writable(uart0) ? 0x00 : 0x04) |
-                             (uart_is_readable(uart0) ? 0x01 : 0x00);
-                    }
-                    break;
-                }
-                break;
-            case 1:
-                rv = sio[(address & 0x01)].status[1];
-                break;
-            case 2:
-                if(address & 0x01)
-                    rv = sio_vector;
-                break;
-            }
-            sio[(address & 0x01)].control[0] &= 0xF8;
+            rv = zuart_status(address & 0x02);
             break;
         }
     } else {
@@ -161,24 +280,7 @@ void DELAYED_COPY_CODE(cpu_out)(uint16_t address, uint8_t value) {
             break;
         case 0xFC:
         case 0xFE:
-            switch(serialmux[(address & 0x01)]) {
-            case SERIAL_LOOP:
-                if(sio[(address & 0x01)].datavalid) {
-                    sio[(address & 0x01)].status[1] |= 0x20;
-                }
-                sio[(address & 0x01)].datavalid = 1;
-                sio[(address & 0x01)].data = value;
-                break;
-            case SERIAL_UART:
-                if(tud_cdc_n_write_available(address & 0x01))
-                    tud_cdc_n_write_char(address & 0x01, value);
-                break;
-            case SERIAL_USB:
-                if(uart_is_writable(uart0)) {
-                    uart_putc(uart0, value);
-                }
-                break;
-            }
+            zuart_write((address & 0x02), value);
             break;
         case 0xFD:
         case 0xFF:

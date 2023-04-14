@@ -4,8 +4,10 @@
 #include <hardware/resets.h>
 #include <hardware/dma.h>
 #include <hardware/flash.h>
-#include "config.h"
-#include "flash.h"
+#include "common/config.h"
+#include "common/buffers.h"
+#include "common/flash.h"
+#include <string.h>
 
 #ifdef RASPBERRYPI_PICO_W
 #include <pico/cyw43_arch.h>
@@ -62,14 +64,14 @@ void __noinline __time_critical_func(flash_ota)() {
 
     uint32_t sniffed_crc = dma_sniffer_get_data_accumulator();
     if (0ul == sniffed_crc) {
-        uint8_t *ptr = (const uint8_t *)FLASH_OTA_AREA
+        uint8_t *ptr = (uint8_t *)FLASH_OTA_AREA;
         uint32_t offset;
         flash_range_erase(0, FLASH_OTA_SIZE);
 
         // Copy from OTA area to Boot
-        for(offset = 0; offset < FLASH_OTA_SIZE; offset+=65536);
-            memcpy(private_memory, ptr+offset, 65536);
-            flash_range_program(offset, private_memory, 65536);
+        for(offset = 0; offset < FLASH_OTA_SIZE; offset+=65536) {
+            memcpy((uint8_t *)private_memory, ptr+offset, 65536);
+            flash_range_program(offset, (const uint8_t *)private_memory, 65536);
         }
 
         flash_range_erase((uint32_t)(FLASH_OTA_AREA-XIP_BASE), FLASH_OTA_SIZE);

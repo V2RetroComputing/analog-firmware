@@ -37,7 +37,9 @@ void DELAYED_COPY_CODE(render_terminal_line)(unsigned int line) {
         uint sl_pos = 0;
 
         // Pad 40 pixels on the left to center horizontally
-        sl->data[sl_pos++] = (text_border|THEN_EXTEND_31) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
 
         for(uint col=0; col < 80; ) {
             // Grab 14 pixels from the next two characters
@@ -62,7 +64,9 @@ void DELAYED_COPY_CODE(render_terminal_line)(unsigned int line) {
         }
 
         // Pad 40 pixels on the right to center horizontally
-        sl->data[sl_pos++] = (text_border|THEN_EXTEND_31) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
 
         sl->length = sl_pos;
         sl->repeat_count = 1;

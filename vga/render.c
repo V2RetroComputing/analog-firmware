@@ -27,10 +27,10 @@ uint16_t DELAYED_COPY_DATA(mono_colors)[14] = {
 
 // Initialize the character generator ROM
 static void DELAYED_COPY_CODE(switch_font)() {
-    if(userfont) {
-        return;
-    } else if(romx_changed) {
+    if(romx_changed) {
         memcpy32(character_rom, (void*)FLASH_FONT(romx_textbank), 4096);
+    } else if(userfont) {
+        return;
     } else if(current_machine != machinefont) {
         switch(current_machine) {
         default:

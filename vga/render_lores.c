@@ -69,8 +69,14 @@ static void DELAYED_COPY_CODE(render_lores_line)(bool p2, uint line) {
     const uint8_t *line_buf = (const uint8_t *)((p2 ? text_p2 : text_p1) + ((line & 0x7) << 7) + (((line >> 3) & 0x3) * 40));
 
     // Pad 40 pixels on the left to center horizontally
-    sl1->data[sl_pos] = (text_border|THEN_EXTEND_31) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl2->data[sl_pos] = (text_border|THEN_EXTEND_31) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl1->data[sl_pos] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl2->data[sl_pos] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl_pos++;
+    sl1->data[sl_pos] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl2->data[sl_pos] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl_pos++;
+    sl1->data[sl_pos] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 8 pixels per word
+    sl2->data[sl_pos] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 8 pixels per word
     sl_pos++;
 
     if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
@@ -109,8 +115,14 @@ static void DELAYED_COPY_CODE(render_lores_line)(bool p2, uint line) {
     }
 
     // Pad 40 pixels on the right to center horizontally
-    sl1->data[sl_pos] = (text_border|THEN_EXTEND_31) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl2->data[sl_pos] = (text_border|THEN_EXTEND_31) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl1->data[sl_pos] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl2->data[sl_pos] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl_pos++;
+    sl1->data[sl_pos] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl2->data[sl_pos] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl_pos++;
+    sl1->data[sl_pos] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 8 pixels per word
+    sl2->data[sl_pos] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 8 pixels per word
     sl_pos++;
 
     sl1->length = sl_pos;

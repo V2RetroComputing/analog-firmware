@@ -101,7 +101,7 @@ extern volatile compat_t current_machine;
 
 
 void default_config();
-int make_config(uint8_t rev);
+int make_config(uint32_t rev);
 bool read_config();
 bool write_config(bool onetime);
 

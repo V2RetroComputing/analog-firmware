@@ -55,7 +55,9 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
     const uint8_t *line_memb = (const uint8_t *)((p2 ? hgr_p4 : hgr_p3) + dhgr_line_to_mem_offset(line));
 
     // Pad 40 pixels on the left to center horizontally
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_31) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
 
     // DHGR is weird. Nuff said.
     uint32_t dots = 0;
@@ -123,7 +125,9 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
     }
 
     // Pad 40 pixels on the right to center horizontally
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_31) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
 
     sl->length = sl_pos;
     sl->repeat_count = 1;

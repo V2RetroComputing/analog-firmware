@@ -1,7 +1,7 @@
 
 #define NEWCONFIG_MAGIC       0x0001434E // "NC\x01\x00"
 #define NEWCONFIG_EOF_MARKER  0x00464F45 // "EOF\x00"
-#define CFGTOKEN_REVISION     0x0001434E // "RV\xXX\x00"
+#define CFGTOKEN_REVISION     0x00015652 // "RV\xXX\x00"
 
 #define CFGTOKEN_MODE_VGA     0x0000564D // "MV\x00\x00" VGA
 #define CFGTOKEN_MODE_PCPI    0x00005A4D // "MZ\x00\x00" PCPI Applicard
@@ -40,6 +40,8 @@
 
 #define CFGTOKEN_JD_HOST      0x0000484A // "JH\x00\x01" JetDirect Hostname
 #define CFGTOKEN_JD_PORT      0x0200444A // "JD\x00\x01" JetDirect Port
+
+#define CFGTOKEN_FONT_00      0x00004656 // "VF\xXX\x00" Custom default font
 
 #define CFGTOKEN_MONO_00      0x00005056 // "VP\x00\x00" Full Color Video
 #define CFGTOKEN_MONO_80      0x00805056 // "VP\x80\x00" B&W Video
