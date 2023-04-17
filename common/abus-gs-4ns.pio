@@ -33,7 +33,7 @@ next_bus_cycle:
 write_cycle:
     ; the current time is P0+82ns (P0 + 10ns + 2 clocks (input synchronizers) + 16 instructions)
 
-    set PINS, 0b110  [31]               ; enable Data tranceiver & wait until both ~DEVSEL and the written data are valid (P0+210ns)
+    set PINS, 0b110  [21]               ; enable Data tranceiver & wait until both ~DEVSEL and the written data are valid (P0+170ns)
     in PINS, 10                         ; read R/W, ~DEVSEL, and Data[7:0], then autopush
     wait 0 GPIO, PHI0_GPIO  [7]         ; wait for PHI0 to fall
     jmp next_bus_cycle
@@ -71,8 +71,8 @@ wait_loop:
     ;
     ; Phase 0 is typically 489 ns long.
     ;  * Data from peripherals should be valid on the data bus by 45 nanoseconds before the end of phase 0
-    ;  * Data should be held for 40ns after phase 0 ends
-    ;  * Data bus should be tri-stated within 60ns after phase 0 ends
+    ;  * Data should be held for no more than 20ns after phase 0 ends
+    ;  * Data bus should be tri-stated within 30ns after phase 0 ends
 
     irq set DATA_BUSY_IRQ
 
@@ -85,7 +85,7 @@ wait_loop:
 
     ; the current time is P0+424ns (P0 + 10ns + 2 clocks (input synchronizers) + 101 instructions)
 
-    wait 0 GPIO, PHI0_GPIO  [7]         ; wait for PHI0 to fall then hold for 40ns  (2 clocks (input synchronizers) + 7 instructions)
+    wait 0 GPIO, PHI0_GPIO  [2]         ; wait for PHI0 to fall then hold for 15ns  (2 clocks (input synchronizers) + 7 instructions)
     set PINS, 0b10                      ; disable Data tranceiver to tri-state the data bus
 
     mov OSR, NULL
