@@ -63,32 +63,32 @@ void DELAYED_COPY_CODE(render_testpattern)() {
 
             if((line == 0) || (line == VGA_HEIGHT-1) || (line == 36) || (line == VGA_HEIGHT-36-1)) {
                 for(; sl_pos < VGA_WIDTH/32; sl_pos++) {
-                    sl->data[sl_pos] = _PIXPAIR(0x1ff | THEN_EXTEND_15, 0x1ff | THEN_EXTEND_15);
+                    sl->data[sl_pos] = _PIXPAIR(_RGB(255, 255, 255) | THEN_EXTEND_15, _RGB(255, 255, 255) | THEN_EXTEND_15);
                 }
                 sl->length = sl_pos;
             } else if(line == 1) {
                 for(uint i=0; i < VGA_WIDTH/4; i++, sl_pos++) {
-                    sl->data[sl_pos] = _PIXPAIR(0x1ff, 0);
+                    sl->data[sl_pos] = _PIXPAIR(_RGB(255, 255, 255), _RGB(0, 0, 0));
                 }
                 for(uint i=0; i < VGA_WIDTH/4; i++, sl_pos++) {
-                    sl->data[sl_pos] = _PIXPAIR(0, 0x1ff);
+                    sl->data[sl_pos] = _PIXPAIR(_RGB(0, 0, 0), _RGB(255, 255, 255));
                 }
 
                 sl->length = sl_pos;
                 sl->repeat_count = 16;
             } else if(line == VGA_HEIGHT-36) {
                 for(uint i=0; i < VGA_WIDTH/4; i++, sl_pos++) {
-                    sl->data[sl_pos] = _PIXPAIR(0x1ff, 0);
+                    sl->data[sl_pos] = _PIXPAIR(_RGB(255, 255, 255), _RGB(0, 0, 0));
                 }
                 for(uint i=0; i < VGA_WIDTH/4; i++, sl_pos++) {
-                    sl->data[sl_pos] = _PIXPAIR(0, 0x1ff);
+                    sl->data[sl_pos] = _PIXPAIR(_RGB(0, 0, 0), _RGB(255, 255, 255));
                 }
 
                 sl->length = sl_pos;
                 sl->repeat_count = 34;
             } else if((line >= 48) && (line < 48+128)) {
-                sl->data[sl_pos++] = _PIXPAIR(0x1ff, 0 | THEN_EXTEND_6); // 8px
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_1, 0 | THEN_EXTEND_1); // 4px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(255, 255, 255), _RGB(0, 0, 0) | THEN_EXTEND_6); // 8px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_1, _RGB(0, 0, 0) | THEN_EXTEND_1); // 4px
 
                 const uint z = (line - 48);
 
@@ -96,18 +96,18 @@ void DELAYED_COPY_CODE(render_testpattern)() {
                     const uint g = z / 16;
                     for(uint b=0; b < 3; b++) {
                         for(uint r=0; r < 8; r++) {
-                            const uint rgb = (r << 6) | (g << 3) | b;
-                            sl->data[sl_pos++] = _PIXPAIR(0, rgb | THEN_EXTEND_6); // 8px
-                            sl->data[sl_pos++] = _PIXPAIR(rgb | THEN_EXTEND_6, 0); // 8px
+                            const uint32_t rgb = _RGB((r << 5), (g << 5), (b << 5));
+                            sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0), rgb | THEN_EXTEND_6); // 8px
+                            sl->data[sl_pos++] = _PIXPAIR(rgb | THEN_EXTEND_6, _RGB(0, 0, 0)); // 8px
                         }
                     }
                 } else {
                     for(uint i=0; i < 12; i++) {
-                        sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_15, 0 | THEN_EXTEND_15); // 384px
+                        sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_15, _RGB(0, 0, 0) | THEN_EXTEND_15); // 384px
                     }
                 }
 
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_3, 0 | THEN_EXTEND_3); // 8px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_3, _RGB(0, 0, 0) | THEN_EXTEND_3); // 8px
 
                 const uint w = (line - 48) << 1;
                 for(uint i=0; i < 32; i+=2) {
@@ -115,21 +115,21 @@ void DELAYED_COPY_CODE(render_testpattern)() {
                     uint32_t bits_b = char_test_bits(error_message[(w & 0x3E0) | (i+1)], (w>>2) & 0x7);
                     uint32_t bits = (bits_a << 7) | bits_b;
                     for(uint j=0; j < 7; j++) {
-                        uint32_t pixeldata = (bits & 0x2000) ? (0) : (0x1ff);
-                        pixeldata |= (bits & 0x1000) ? ((0) << 16) : ((0x1ff) << 16);
+                        uint32_t pixeldata = (bits & 0x2000) ? (_RGB(0, 0, 0)) : (_RGB(255, 255, 255));
+                        pixeldata |= (bits & 0x1000) ? ((_RGB(0, 0, 0)) << 16) : ((_RGB(255, 255, 255)) << 16);
                         bits <<= 2;
                         sl->data[sl_pos++] = pixeldata;
                     }
                 }
 
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_1, 0 | THEN_EXTEND_1); // 4px
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_6, 0x1ff); // 8px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_1, _RGB(0, 0, 0) | THEN_EXTEND_1); // 4px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_6, _RGB(255, 255, 255)); // 8px
 
                 sl->repeat_count = 1;
                 sl->length = sl_pos;
             } else if((line >= 176) && (line < 176+128)) {
-                sl->data[sl_pos++] = _PIXPAIR(0x1ff, 0 | THEN_EXTEND_6); // 8px
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_1, 0 | THEN_EXTEND_1); // 4px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(255, 255, 255), _RGB(0, 0, 0) | THEN_EXTEND_6); // 8px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_1, _RGB(0, 0, 0) | THEN_EXTEND_1); // 4px
 
                 const uint z = (line - 176);
                 const uint g = z / 16;
@@ -138,13 +138,13 @@ void DELAYED_COPY_CODE(render_testpattern)() {
                 if((z & 0xf) < 14) {
                     uint b = 3;
                     for(uint r=0; r < 8; r++) {
-                        const uint rgb = (r << 6) | (g << 3) | b;
-                        sl->data[sl_pos++] = _PIXPAIR(0, rgb | THEN_EXTEND_6);
-                        sl->data[sl_pos++] = _PIXPAIR(rgb | THEN_EXTEND_6, 0);
+                        const uint32_t rgb = _RGB((r << 5), (g << 5), (b << 5));
+                        sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0), rgb | THEN_EXTEND_6);
+                        sl->data[sl_pos++] = _PIXPAIR(rgb | THEN_EXTEND_6, _RGB(0, 0, 0));
                     }
                 } else {
                     for(uint i=0; i < 4; i++) {
-                        sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_15, 0 | THEN_EXTEND_15);
+                        sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_15, _RGB(0, 0, 0) | THEN_EXTEND_15);
                     }
                 }
 
@@ -159,17 +159,17 @@ void DELAYED_COPY_CODE(render_testpattern)() {
                 if((z & 0xf) < 14) {
                     uint b = 4;
                     for(uint r=0; r < 8; r++) {
-                        const uint rgb = (r << 6) | (g << 3) | b;
-                        sl->data[sl_pos++] = _PIXPAIR(0, rgb | THEN_EXTEND_6);
-                        sl->data[sl_pos++] = _PIXPAIR(rgb | THEN_EXTEND_6, 0);
+                        const uint32_t rgb = _RGB((r << 5), (g << 5), (b << 5));
+                        sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0), rgb | THEN_EXTEND_6);
+                        sl->data[sl_pos++] = _PIXPAIR(rgb | THEN_EXTEND_6, _RGB(0, 0, 0));
                     }
                 } else {
                     for(uint i=0; i < 4; i++) {
-                        sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_15, 0 | THEN_EXTEND_15);
+                        sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_15, _RGB(0, 0, 0) | THEN_EXTEND_15);
                     }
                 }
 
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_3, 0 | THEN_EXTEND_3); // 8px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_3, _RGB(0, 0, 0) | THEN_EXTEND_3); // 8px
 
                 const uint w = (line - 48) << 1;
                 for(uint i=0; i < 32; i+=2) {
@@ -177,21 +177,21 @@ void DELAYED_COPY_CODE(render_testpattern)() {
                     uint32_t bits_b = char_test_bits(error_message[(w & 0x3E0) | (i+1)], (w>>2) & 0x7);
                     uint32_t bits = (bits_a << 7) | bits_b;
                     for(uint j=0; j < 7; j++) {
-                        uint32_t pixeldata = (bits & 0x2000) ? (0) : (0x1ff);
-                        pixeldata |= (bits & 0x1000) ? ((0) << 16) : ((0x1ff) << 16);
+                        uint32_t pixeldata = (bits & 0x2000) ? (_RGB(0, 0, 0)) : (_RGB(255, 255, 255));
+                        pixeldata |= (bits & 0x1000) ? ((_RGB(0, 0, 0)) << 16) : ((_RGB(255, 255, 255)) << 16);
                         bits <<= 2;
                         sl->data[sl_pos++] = pixeldata;
                     }
                 }
 
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_1, 0 | THEN_EXTEND_1); // 4px
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_6, 0x1ff); // 8px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_1, _RGB(0, 0, 0) | THEN_EXTEND_1); // 4px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_6, _RGB(255, 255, 255)); // 8px
 
                 sl->repeat_count = 1;
                 sl->length = sl_pos;
             } else if((line >= 304) && (line < 304+128)) {
-                sl->data[sl_pos++] = _PIXPAIR(0x1ff, 0 | THEN_EXTEND_6); // 8px
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_1, 0 | THEN_EXTEND_1); // 4px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(255, 255, 255), _RGB(0, 0, 0) | THEN_EXTEND_6); // 8px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_1, _RGB(0, 0, 0) | THEN_EXTEND_1); // 4px
 
                 const uint z = (line - 304);
 
@@ -199,18 +199,18 @@ void DELAYED_COPY_CODE(render_testpattern)() {
                     const uint g = z / 16;
                     for(uint b=5; b < 8; b++) {
                         for(uint r=0; r < 8; r++) {
-                            const uint rgb = (r << 6) | (g << 3) | b;
-                            sl->data[sl_pos++] = _PIXPAIR(0, rgb | THEN_EXTEND_6);
-                            sl->data[sl_pos++] = _PIXPAIR(rgb | THEN_EXTEND_6, 0);
+                            const uint32_t rgb = _RGB((r << 5), (g << 5), (b << 5));
+                            sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0), rgb | THEN_EXTEND_6);
+                            sl->data[sl_pos++] = _PIXPAIR(rgb | THEN_EXTEND_6, _RGB(0, 0, 0));
                         }
                     }
                 } else {
                     for(uint i=0; i < 12; i++) {
-                        sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_15, 0 | THEN_EXTEND_15); // 384px
+                        sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_15, _RGB(0, 0, 0) | THEN_EXTEND_15); // 384px
                     }
                 }
 
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_3, 0 | THEN_EXTEND_3); // 8px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_3, _RGB(0, 0, 0) | THEN_EXTEND_3); // 8px
 
                 const uint w = (line - 48) << 1;
                 for(uint i=0; i < 32; i+=2) {
@@ -218,29 +218,29 @@ void DELAYED_COPY_CODE(render_testpattern)() {
                     uint32_t bits_b = char_test_bits(error_message[(w & 0x3E0) | (i+1)], (w>>2) & 0x7);
                     uint32_t bits = (bits_a << 7) | bits_b;
                     for(uint j=0; j < 7; j++) {
-                        uint32_t pixeldata = (bits & 0x2000) ? (0) : (0x1ff);
-                        pixeldata |= (bits & 0x1000) ? ((0) << 16) : ((0x1ff) << 16);
+                        uint32_t pixeldata = (bits & 0x2000) ? (_RGB(0, 0, 0)) : (_RGB(255, 255, 255));
+                        pixeldata |= (bits & 0x1000) ? ((_RGB(0, 0, 0)) << 16) : ((_RGB(255, 255, 255)) << 16);
                         bits <<= 2;
                         sl->data[sl_pos++] = pixeldata;
                     }
                 }
 
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_1, 0 | THEN_EXTEND_1); // 4px
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_6, 0x1ff); // 8px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_1, _RGB(0, 0, 0) | THEN_EXTEND_1); // 4px
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_6, _RGB(255, 255, 255)); // 8px
 
                 sl->repeat_count = 1;
                 sl->length = sl_pos;
             } else if(line < VGA_HEIGHT) {
                 // black w/ white border
-                sl->data[sl_pos++] = _PIXPAIR(0x1ff, 0 | THEN_EXTEND_6);
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(255, 255, 255), _RGB(0, 0, 0) | THEN_EXTEND_6);
                 for(uint i=0; i < 39; i++) {
-                    sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_7, 0 | THEN_EXTEND_7);
+                    sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_7, _RGB(0, 0, 0) | THEN_EXTEND_7);
                 }
-                sl->data[sl_pos++] = _PIXPAIR(0 | THEN_EXTEND_6, 0x1ff);
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0) | THEN_EXTEND_6, _RGB(255, 255, 255));
 
                 sl->length = sl_pos;
             } else {
-                sl->data[sl_pos++] = _PIXPAIR(0, 0);
+                sl->data[sl_pos++] = _PIXPAIR(_RGB(0, 0, 0), _RGB(0, 0, 0));
 
                 sl->length = sl_pos;
             }
@@ -277,10 +277,10 @@ void DELAYED_COPY_CODE(render_status_line)() {
 
             // Translate each pair of bits into a pair of pixels
             for(int i=0; i < 7; i++) {
-                uint32_t pixeldata = (bits & 0x2000) ? (0x000) : (0x1ff);
+                uint32_t pixeldata = (bits & 0x2000) ? (_RGB(0, 0, 0)) : (_RGB(255, 255, 255));
                 pixeldata |= (bits & 0x1000) ?
-                    ((uint32_t)0x000) << 16 :
-                    ((uint32_t)0x1ff) << 16;
+                    ((uint32_t)_RGB(0, 0, 0)) << 16 :
+                    ((uint32_t)_RGB(255, 255, 255)) << 16;
                 bits <<= 2;
 
                 sl->data[sl_pos] = pixeldata;
