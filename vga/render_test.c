@@ -16,7 +16,7 @@ char __attribute__((section(".uninitialized_data."))) error_message[32*24+1];
 
 void DELAYED_COPY_CODE(render_test_init)() {
     memset(error_message, ' ', 32*24);
-    memcpy(error_message +   0, "HARDWARE:         V2 Analog Rev1", 32);
+    memcpy(error_message +   0, "HARDWARE: " HWSTRING, 32);
     memcpy(error_message +  32, "FIRMWARE: " BUILDSTR, 32);
 
     memcpy(error_message + 128, "     Copyright (C) 2022-2023    ", 32);

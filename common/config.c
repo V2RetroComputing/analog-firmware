@@ -726,16 +726,10 @@ void DELAYED_COPY_CODE(config_handler)() {
                 case 'h':
                     // Identify Hardware Type
                     retval = REPLY_OK;
-                    config_rpybuf[rs++] = 0x02; // V2 Retro Computing
-#ifdef ANALOG_GS
-                    // AnalogGS Rev 1
-                    config_rpybuf[rs++] = 'G';
-                    config_rpybuf[rs++] = '1';
-#else
-                    // Analog Rev 1
-                    config_rpybuf[rs++] = 'A';
-                    config_rpybuf[rs++] = '1';
-#endif
+                    config_rpybuf[rs++] = 0x02;   // V2 Retro Computing
+                    config_rpybuf[rs++] = 'A';    // V2 Analog
+                    config_rpybuf[rs++] = HWBYTE; // 'G'S / 'W'ifi / 'L'C
+                    config_rpybuf[rs++] = HWREV;  // '1'
                     break;
 
                 case 'd':
