@@ -138,6 +138,7 @@ if(${CMAKE_CURRENT_BINARY_DIR} MATCHES "-z80")
 target_link_libraries(v2-analog${BINARY_TAGS} PUBLIC
     tinyusb_device
     tinyusb_board
+    hardware_uart
 )
 endif()
 
