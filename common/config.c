@@ -98,7 +98,7 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
             case CFGTOKEN_BORDER:
                 terminal_border = (config[i] >> 16) & 0xF;
                 break;
-#else
+#elif defined(FUNCTION_Z80)
             case CFGTOKEN_MUX_LOOP:
                 serialmux[(config[i] >> 16) & 1] = SERIAL_LOOP;
                 break;
@@ -273,7 +273,7 @@ int DELAYED_COPY_CODE(make_config)(uint32_t rev) {
 #endif
 
 #ifdef FUNCTION_VGA
-    config_temp[i++] = CFGTOKEN_FONT_00 | ((romx_textbank & 0x2F) << 20);
+    config_temp[i++] = CFGTOKEN_FONT_00 | ((romx_textbank & 0x2F) << 16);
     config_temp[i++] = CFGTOKEN_MONO_00 | ((mono_palette & 0xF) << 20);
     config_temp[i++] = CFGTOKEN_TBCOLOR | ((terminal_tbcolor & 0xFF) << 16);
     config_temp[i++] = CFGTOKEN_BORDER | ((terminal_border & 0xF) << 16);
@@ -324,9 +324,8 @@ bool DELAYED_COPY_CODE(is_primary_config_newer)() {
     uint8_t a=get_config_rev(FLASH_CONFIG_PRIMARY);
     uint8_t b=get_config_rev(FLASH_CONFIG_SECONDARY);
     
-    return (a == ((b+1) & 0xff));
+    return ((int8_t)(a-b)) >= 0;
 }
-
 
 bool DELAYED_COPY_CODE(read_config)() {
     if(is_config_valid(FLASH_CONFIG_ONETIME)) {
