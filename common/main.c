@@ -183,8 +183,8 @@ int main() {
     // Finish copying remaining data and code to RAM from flash
     dmacpy32(__ram_delayed_copy_start__, __ram_delayed_copy_end__, __ram_delayed_copy_source__);
 
-    // Sensible defaults if there is no config / fs
-    default_config();
+    // Load the config from flash, or defaults
+    read_config();
     
     core0_loop();
 
