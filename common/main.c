@@ -175,13 +175,31 @@ int main() {
     memcpy32((void*)apple_memory+0xC000, (void *)FLASH_6502_BASE, FLASH_6502_SIZE);
 
     // Initialize the config window in each rom slot
-    memcpy((uint8_t*)apple_memory+0xC1F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2ANALOG", 16);
-    memcpy((uint8_t*)apple_memory+0xC2F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2ANALOG", 16);
-    memcpy((uint8_t*)apple_memory+0xC3F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2ANALOG", 16);
-    memcpy((uint8_t*)apple_memory+0xC4F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2ANALOG", 16);
-    memcpy((uint8_t*)apple_memory+0xC5F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2ANALOG", 16);
-    memcpy((uint8_t*)apple_memory+0xC6F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2ANALOG", 16);
-    memcpy((uint8_t*)apple_memory+0xC7F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2ANALOG", 16);
+    memcpy((uint8_t*)apple_memory+0xC1F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2AxCx00", 16);
+    memcpy((uint8_t*)apple_memory+0xC2F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2AxCx00", 16);
+    memcpy((uint8_t*)apple_memory+0xC3F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2AxCx00", 16);
+    memcpy((uint8_t*)apple_memory+0xC4F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2AxCx00", 16);
+    memcpy((uint8_t*)apple_memory+0xC5F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2AxCx00", 16);
+    memcpy((uint8_t*)apple_memory+0xC6F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2AxCx00", 16);
+    memcpy((uint8_t*)apple_memory+0xC7F0, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFFV2AxCx00", 16);
+
+    // Card Type identifiers
+    apple_memory[0xC1FB] = HWBYTE;
+    apple_memory[0xC2FB] = HWBYTE;
+    apple_memory[0xC3FB] = HWBYTE;
+    apple_memory[0xC4FB] = HWBYTE;
+    apple_memory[0xC5FB] = HWBYTE;
+    apple_memory[0xC6FB] = HWBYTE;
+    apple_memory[0xC7FB] = HWBYTE;
+
+    // Slot identifiers
+    apple_memory[0xC1FD] = '1';
+    apple_memory[0xC2FD] = '2';
+    apple_memory[0xC3FD] = '3';
+    apple_memory[0xC4FD] = '4';
+    apple_memory[0xC5FD] = '5';
+    apple_memory[0xC6FD] = '6';
+    apple_memory[0xC7FD] = '7';
 
     // Finish copying remaining data and code to RAM from flash
     dmacpy32(__ram_delayed_copy_start__, __ram_delayed_copy_end__, __ram_delayed_copy_source__);
