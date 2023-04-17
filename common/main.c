@@ -209,15 +209,14 @@ int main() {
     // Load the config from flash, or defaults
     read_config();
 
-#ifdef FUNCTION_Z80
+#if defined(FUNCTION_Z80) && defined(ANALOG_GS)
     uart_init(uart0, sio[0].baudrate);
+    uart_init(uart1, sio[1].baudrate);
 
     gpio_set_function(0, GPIO_FUNC_UART);
     gpio_set_function(1, GPIO_FUNC_UART);
     gpio_set_function(2, GPIO_FUNC_UART);
     gpio_set_function(3, GPIO_FUNC_UART);
-
-    uart_init(uart1, sio[1].baudrate);
 
     gpio_set_function(4, GPIO_FUNC_UART);
     gpio_set_function(5, GPIO_FUNC_UART);

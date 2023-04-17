@@ -36,6 +36,7 @@ uint8_t DELAYED_COPY_CODE(zuart_read)(bool port) {
     }
 
     switch(serialmux[port]) {
+    default:
     case SERIAL_LOOP:
         break;
     case SERIAL_USB:
@@ -44,6 +45,7 @@ uint8_t DELAYED_COPY_CODE(zuart_read)(bool port) {
             sio[port].datavalid = 1;
         }
         break;
+#ifdef ANALOG_GS
     case SERIAL_UART:
         if(port) {
             if(uart_is_readable(uart1)) {
@@ -57,6 +59,7 @@ uint8_t DELAYED_COPY_CODE(zuart_read)(bool port) {
             }
         }
         break;
+#endif
     }
     
     return rv;
@@ -87,6 +90,7 @@ uint8_t DELAYED_COPY_CODE(auart_status)(bool port) {
     rv = sio[port].datavalid ? 0x08 : 0x00;
 
     switch(serialmux[port]) {
+    default:
     case SERIAL_LOOP:
         rv |= ((sio[port].control[5] & 0x02) ? 0x40 : 0x00) |
              ((sio[port].control[5] & 0x80) ? 0x20 : 0x00) |
@@ -97,6 +101,7 @@ uint8_t DELAYED_COPY_CODE(auart_status)(bool port) {
              (tud_cdc_n_connected(port) ? 0x00 : 0x20) |
              (tud_cdc_n_write_available(port) ? 0x10 : 0x00);
         break;
+#ifdef ANALOG_GS
     case SERIAL_UART:
         if(port) {
             rv |= (uart_is_writable(uart1) ? 0x10 : 0x00);
@@ -104,6 +109,7 @@ uint8_t DELAYED_COPY_CODE(auart_status)(bool port) {
             rv |= (uart_is_writable(uart0) ? 0x10 : 0x00);
         }
         break;
+#endif
     }
 
     return rv;
@@ -130,6 +136,7 @@ uint8_t DELAYED_COPY_CODE(auart_command)(bool port, uint8_t value) {
 
 uint8_t DELAYED_COPY_CODE(zuart_write)(bool port, uint8_t value) {
     switch(serialmux[port]) {
+    default:
     case SERIAL_LOOP:
         if(sio[port].datavalid) {
             sio[port].status[1] |= 0x20;
@@ -142,6 +149,7 @@ uint8_t DELAYED_COPY_CODE(zuart_write)(bool port, uint8_t value) {
             tud_cdc_n_write_char(port, value);
         }
         break;
+#ifdef ANALOG_GS
     case SERIAL_UART:
         if(port) {
             if(uart_is_writable(uart1)) {
@@ -153,6 +161,7 @@ uint8_t DELAYED_COPY_CODE(zuart_write)(bool port, uint8_t value) {
             }
         }
         break;
+#endif
     }
     return value;
 }
@@ -170,6 +179,7 @@ uint8_t DELAYED_COPY_CODE(zuart_status)(bool port) {
         rv = sio[port].datavalid ? 0x01 : 0x00;
 
         switch(serialmux[port]) {
+        default:
         case SERIAL_LOOP:
             rv |= ((sio[port].control[5] & 0x02) ? 0x20 : 0x00) |
                  ((sio[port].control[5] & 0x80) ? 0x08 : 0x00) |
@@ -180,6 +190,7 @@ uint8_t DELAYED_COPY_CODE(zuart_status)(bool port) {
                  (tud_cdc_n_connected(port) ? 0x08 : 0x00) |
                  (tud_cdc_n_write_available(port) ? 0x04 : 0x00);
             break;
+#ifdef ANALOG_GS
         case SERIAL_UART:
             if(port) {
                 rv |= 0x20 | 
@@ -189,6 +200,7 @@ uint8_t DELAYED_COPY_CODE(zuart_status)(bool port) {
                      (uart_is_writable(uart0) ? 0x00 : 0x04);
             }
             break;
+#endif
         }
         break;
     case 1:
@@ -264,6 +276,7 @@ void DELAYED_COPY_CODE(cpu_out)(uint16_t address, uint8_t value) {
                 if((address & 0x02) == 0) {
                     divisor = value ? value : 256;
                     sio[address & 0x01].baudrate = 115200 / divisor;
+#ifdef ANALOG_GS
                     if(serialmux[(address & 0x01)] == SERIAL_UART) {
                         if(address & 0x01) {
                             uart_set_baudrate(uart1, sio[1].baudrate);
@@ -271,6 +284,7 @@ void DELAYED_COPY_CODE(cpu_out)(uint16_t address, uint8_t value) {
                             uart_set_baudrate(uart0, sio[0].baudrate);
                         }
                     }
+#endif
                 }
             } else if(value & 1) {
                 ctc[address & 0x03].control = value;
