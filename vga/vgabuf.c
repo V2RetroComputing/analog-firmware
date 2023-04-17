@@ -10,8 +10,8 @@ uint8_t __attribute__((section(".uninitialized_data."))) terminal_character_rom[
 volatile uint8_t terminal_row = 0;
 volatile uint8_t terminal_col = 0;
 
-volatile uint8_t terminal_tbcolor = 0xF6;
-volatile uint8_t terminal_border = 0x6;
+volatile uint8_t terminal_tbcolor = 0xF0;
+volatile uint8_t terminal_border = 0x0;
 
 volatile uint8_t romx_type = 0;
 volatile uint8_t romx_unlocked = 0;
