@@ -137,12 +137,12 @@ uint8_t DELAYED_COPY_CODE(zuart_write)(bool port, uint8_t value) {
         sio[port].datavalid = 1;
         sio[port].data = value;
         break;
-    case SERIAL_UART:
+    case SERIAL_USB:
         if(tud_cdc_n_write_available(port)) {
             tud_cdc_n_write_char(port, value);
         }
         break;
-    case SERIAL_USB:
+    case SERIAL_UART:
         if(port) {
             if(uart_is_writable(uart1)) {
                 uart_putc(uart1, value);
