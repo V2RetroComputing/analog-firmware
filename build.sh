@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ -z ${PICO_SDK:+x} ]; then
-  echo You must set PICO_SDK to the path where you downloaded https://github.com/raspberrypi/pico-sdk.git
+if [ -z ${PICO_SDK_PATH:+x} ]; then
+  echo You must set PICO_SDK_PATH to the path where you downloaded https://github.com/raspberrypi/pico-sdk.git
   exit 1
 fi
 
