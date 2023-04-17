@@ -1,7 +1,7 @@
 
 #define NEWCONFIG_MAGIC       0x0001434E // "NC\x01\x00"
 #define NEWCONFIG_EOF_MARKER  0x00464F45 // "EOF\x00"
-#define CFGTOKEN_REVISION     0x00015652 // "RV\xXX\x00"
+#define CFGTOKEN_REVISION     0x00005652 // "RV\xXX\x00"
 
 #define CFGTOKEN_MODE_VGA     0x0000564D // "MV\x00\x00" VGA
 #define CFGTOKEN_MODE_PCPI    0x00005A4D // "MZ\x00\x00" PCPI Applicard
@@ -38,8 +38,8 @@
 #define CFGTOKEN_WIFI_IP      0x04004957 // "WI\x00\xSS" WiFi IP
 #define CFGTOKEN_WIFI_NM      0x04004E57 // "WN\x00\xSS" WiFi Netmask
 
-#define CFGTOKEN_JD_HOST      0x0000484A // "JH\x00\x01" JetDirect Hostname
-#define CFGTOKEN_JD_PORT      0x0200444A // "JD\x00\x01" JetDirect Port
+#define CFGTOKEN_JD_HOST      0x0000484A // "JH\x00\xSS" JetDirect Hostname
+#define CFGTOKEN_JD_PORT      0x0200504A // "JP\x00\x02" JetDirect Port
 
 #define CFGTOKEN_FONT_00      0x00004656 // "VF\xXX\x00" Custom default font
 
