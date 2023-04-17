@@ -4,12 +4,14 @@
 #include <hardware/pio.h>
 #include "common/abus.h"
 #include "common/config.h"
+#include "common/build.h"
 #include "common/modes.h"
 #include "common/buffers.h"
 #include "common/flash.h"
 #include "common/dmacopy.h"
 
 #ifdef FUNCTION_Z80
+#include "z80/z80buf.h"
 #include <hardware/uart.h>
 #endif
 
