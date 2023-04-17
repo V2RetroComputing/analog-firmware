@@ -15,7 +15,9 @@ build_firmware() {
 
 build_firmware v2-analog-lc-4ns-z80
 build_firmware v2-analog-lc-8ns-z80
+build_firmware v2-analog-lc-4ns-vga
 build_firmware v2-analog-lc-8ns-vga
 build_firmware v2-analog-wifi-4ns-z80
 build_firmware v2-analog-wifi-8ns-z80
+build_firmware v2-analog-wifi-4ns-vga
 build_firmware v2-analog-wifi-8ns-vga
