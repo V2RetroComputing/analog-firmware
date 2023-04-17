@@ -48,20 +48,29 @@ static void DELAYED_COPY_CODE(render_shr_line)(uint16_t line) {
     i = 0;
     if(control & 0x80) { // 640 Pixels
         while(i < 160) {
-            // Load in the next 2 pixels
+            // Load in the next 4 pixels
             dots = (line_mem[i++] & 0xff);
 
-            color_a = ((dots >> 4) & 0xf);
-            color_b = ((dots >> 0) & 0xf);
+            color_a = ((dots >> 6) & 0x3);
+            color_b = ((dots >> 4) & 0x3);
 
             // Consume 2 pixels
-            pixeldata = rgb444(shr_palette[color_a]) | THEN_EXTEND_1;
-            pixeldata |= (rgb444(shr_palette[color_b]) | THEN_EXTEND_1) << 16;
+            pixeldata = rgb444(shr_palette[color_a | 0x8]);
+            pixeldata |= (rgb444(shr_palette[color_b | 0xC])) << 16;
             sl->data[sl_pos++] = pixeldata;
+
+            color_a = ((dots >> 2) & 0x3);
+            color_b = ((dots >> 0) & 0x3);
+
+            // Consume 2 pixels
+            pixeldata = rgb444(shr_palette[color_a | 0x0]);
+            pixeldata |= (rgb444(shr_palette[color_b | 0x4])) << 16;
+            sl->data[sl_pos++] = pixeldata;
+
         }
     } else if(control & 0x40) { // 320 Pixels w/ color fill
         while(i < 160) {
-            // Load in the next 4 subpixels
+            // Load in the next 2 pixels
             dots = (line_mem[i++] & 0xff);
 
             // Consume 2 pixels
