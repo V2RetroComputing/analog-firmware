@@ -11,8 +11,10 @@
 
 #ifdef ANALOG_GS
 #include "vga12.pio.h"
+#define RGB_PINCOUNT 12
 #else
 #include "vga9.pio.h"
+#define RGB_PINCOUNT 9
 #endif
 
 #include "vgaout.h"
@@ -110,18 +112,18 @@ static void DELAYED_COPY_CODE(vga_data_setup)(PIO pio, uint sm) {
     sm_config_set_clkdiv(&c, CONFIG_SYSCLOCK / (2*PIXEL_FREQ));
 
     // Map the state machine's OUT pin group to the data pins
-    sm_config_set_out_pins(&c, CONFIG_PIN_RGB_BASE, 9);
-    sm_config_set_set_pins(&c, CONFIG_PIN_RGB_BASE, 9);
+    sm_config_set_out_pins(&c, CONFIG_PIN_RGB_BASE, RGB_PINCOUNT);
+    sm_config_set_set_pins(&c, CONFIG_PIN_RGB_BASE, RGB_PINCOUNT);
 
-    // Enable autopull every 32 bits  (2 x (9 data + 5 jump + 2 pad) bits)
+    // Enable autopull every 32 bits  (2 x (RGB_PINCOUNT data + jump + pad) bits)
     sm_config_set_out_shift(&c, true, true, 32);
 
     // Set join the state machine FIFOs to double the TX fifo size
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
 
     // Configure the pins as outputs & connect to the PIO
-    pio_sm_set_consecutive_pindirs(pio, sm, CONFIG_PIN_RGB_BASE, 9, true);
-    for(int i=0; i < 9; i++) {
+    pio_sm_set_consecutive_pindirs(pio, sm, CONFIG_PIN_RGB_BASE, RGB_PINCOUNT, true);
+    for(int i=0; i < RGB_PINCOUNT; i++) {
         pio_gpio_init(pio, CONFIG_PIN_RGB_BASE+i);
     }
 
