@@ -152,11 +152,11 @@ void DELAYED_COPY_CODE(render_loop)() {
         } else {
             if(busactive == 0) {
                 screentimeout++;
-                if(screentimeout == 5) {
+                if(screentimeout == 30) {
                     update_status_right("Going to sleep...");
                 }
             } else {
-                if(screentimeout >= 5) {
+                if(screentimeout >= 30) {
                     // Clear the sleep mode message
                     memset(status_line, 0, sizeof(status_line));
                     status_timeout = 0;
