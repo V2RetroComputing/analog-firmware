@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <string.h>
 #include <pico/stdlib.h>
 #include <pico/multicore.h>
@@ -9,6 +8,10 @@
 #include "common/buffers.h"
 #include "common/flash.h"
 #include "common/dmacopy.h"
+
+#ifdef FUNCTION_Z80
+#include <hardware/uart.h>
+#endif
 
 #ifdef RASPBERRYPI_PICO_W
 #include <pico/cyw43_arch.h>
@@ -185,7 +188,23 @@ int main() {
 
     // Load the config from flash, or defaults
     read_config();
-    
+
+#ifdef FUNCTION_Z80
+    uart_init(uart0, sio[0].baudrate);
+
+    gpio_set_function(0, GPIO_FUNC_UART);
+    gpio_set_function(1, GPIO_FUNC_UART);
+    gpio_set_function(2, GPIO_FUNC_UART);
+    gpio_set_function(3, GPIO_FUNC_UART);
+
+    uart_init(uart1, sio[1].baudrate);
+
+    gpio_set_function(4, GPIO_FUNC_UART);
+    gpio_set_function(5, GPIO_FUNC_UART);
+    gpio_set_function(6, GPIO_FUNC_UART);
+    gpio_set_function(7, GPIO_FUNC_UART);
+#endif
+
     core0_loop();
 
     return 0;
