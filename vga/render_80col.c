@@ -17,7 +17,7 @@ uint8_t terminal_width = 80;
 uint8_t terminal_height = 24;
 
 static inline uint_fast8_t char_terminal_bits(uint_fast8_t ch, uint_fast8_t glyph_line) {
-    uint_fast8_t bits = terminal_character_rom[terminal_charset | (((uint_fast16_t)ch & 0x7f) << 3) | glyph_line];
+    uint_fast8_t bits = terminal_character_rom[terminal_charset | (((uint_fast16_t)ch & 0x7f) << 4) | glyph_line];
 
     if(ch & 0x80) {
         return (bits & 0x7f) ^ 0x7f;

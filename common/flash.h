@@ -63,8 +63,12 @@
 #define FLASH_FONT_EXTRA26     FLASH_FONT(0x26)
 #define FLASH_FONT_EXTRA27     FLASH_FONT(0x27)
 
+// Videx Font
+#define FLASH_VIDEX_SIZE       (4*1024)
+#define FLASH_VIDEX_BASE       (FLASH_FONT_BASE - FLASH_VIDEX_SIZE)
+
 // Firmware for $C000-$CFFF
 #define FLASH_6502_SIZE       (4*1024)
-#define FLASH_6502_BASE       (FLASH_FONT_BASE - FLASH_6502_SIZE)
+#define FLASH_6502_BASE       (FLASH_VIDEX_BASE - FLASH_6502_SIZE)
 
 extern void flash_reboot() __attribute__ ((noreturn));

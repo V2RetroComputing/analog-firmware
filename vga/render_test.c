@@ -46,7 +46,7 @@ void DELAYED_COPY_CODE(render_about_init)() {
 }
 
 static inline uint_fast8_t char_test_bits(uint_fast8_t ch, uint_fast8_t glyph_line) {
-    uint_fast8_t bits = terminal_character_rom[((uint_fast16_t)(ch & 0x7f) << 3) | glyph_line | 0x400];
+    uint_fast8_t bits = terminal_character_rom[((uint_fast16_t)(ch & 0x7f) << 4) | glyph_line];
     return bits & 0x7f;
 }
 

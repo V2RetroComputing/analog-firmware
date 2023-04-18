@@ -112,7 +112,7 @@ void DELAYED_COPY_CODE(render_init)() {
     terminal_tbcolor = 0xf0;
     terminal_border = 0x00;
 
-    memcpy(terminal_character_rom, (void*)FLASH_FONT_APPLE_IIE, 4096);
+    memcpy(terminal_character_rom, (void*)FLASH_VIDEX_BASE, 4096);
     memset(status_line, 0, sizeof(status_line));
 
     terminal_clear_screen();
