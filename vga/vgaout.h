@@ -47,4 +47,4 @@ void vga_submit_scanline(struct vga_scanline *scanline);
 
 void vga_stop();
 void vga_dpms_sleep();
-void vga_dpms_wake();
+void vga_dpms_wake();extern void terminal_process_input();
