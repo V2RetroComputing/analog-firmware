@@ -235,7 +235,8 @@ struct vga_scanline * DELAYED_COPY_CODE(vga_prepare_scanline)() {
 
     // Wait for the scanline buffer to become available again
     while(scanline->_flags & FLAG_BUSY)
-        tight_loop_contents();
+        terminal_process_input();
+        //tight_loop_contents();
 
     // Reinitialize the scanline struct for reuse
     scanline->length = 0;

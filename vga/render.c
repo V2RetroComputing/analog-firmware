@@ -115,6 +115,8 @@ void DELAYED_COPY_CODE(render_init)() {
     memcpy(terminal_character_rom, (void*)FLASH_FONT_APPLE_IIE, 4096);
     memset(status_line, 0, sizeof(status_line));
 
+    terminal_clear_screen();
+
     render_test_init();
 }
 
@@ -124,7 +126,7 @@ void DELAYED_COPY_CODE(render_border)(uint count) {
     uint sl_pos = 0;
 
     while(sl_pos < VGA_WIDTH/16) {
-        sl->data[sl_pos] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 8 pixels per word
+        sl->data[sl_pos] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
         sl_pos++;
     }
 
@@ -203,8 +205,6 @@ void DELAYED_COPY_CODE(render_loop)() {
                     testdone = 1;
                     render_about_init();
                 }
-            } else if(soft_switches & SOFTSW_TERMINAL) {
-                render_terminal();
 #if defined(ANALOG_GS) || defined(OVERCLOCKED)
             } else if(soft_switches & SOFTSW_SHR) {
                 render_shr();
@@ -220,6 +220,9 @@ void DELAYED_COPY_CODE(render_loop)() {
                     render_border(32);
                 }
 
+                if(soft_switches & SOFTSW_TERMINAL) {
+                    render_terminal();
+                } else
                 switch(soft_switches & SOFTSW_MODE_MASK) {
                 case 0:
                     if(soft_switches & SOFTSW_DGR) {

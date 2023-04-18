@@ -10,6 +10,10 @@
 extern uint8_t character_rom[4096];
 extern uint8_t terminal_character_rom[4096];
 
+extern uint8_t terminal_fifo[256];
+extern uint8_t terminal_fifo_wrptr;
+extern uint8_t terminal_fifo_rdptr;
+
 extern volatile uint8_t terminal_row;
 extern volatile uint8_t terminal_col;
 

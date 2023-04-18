@@ -224,17 +224,14 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                 apple_memory[address] = terminal_border;
                 break;
             case 0x08:
-                terminal_row = (value < 24) ? value : 23;
-                apple_memory[address] = terminal_row;
-                apple_memory[address+2] = terminal_memory[terminal_row*80+terminal_col];
+                soft_switches &= ~SOFTSW_TERMINAL;
                 break;
             case 0x09:
-                terminal_col = (value < 80) ? value : 79;
-                apple_memory[address] = terminal_col;
-                apple_memory[address+1] = terminal_memory[terminal_row*80+terminal_col];
+                soft_switches |= SOFTSW_TERMINAL;
                 break;
             case 0x0A:
-                terminal_memory[terminal_row*80+terminal_col] = value;
+                terminal_fifo[terminal_fifo_wrptr++] = (value & 0xFF);
+                apple_memory[address] = (terminal_fifo_rdptr - terminal_fifo_wrptr);
                 break;
             case 0x0B:
                 if((value & 0xFF) <= 0x27) {
@@ -244,5 +241,10 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                 break;
             }
         }
+    } else if(CARD_SELECT && CARD_DEVSEL) {
+        if((address & 0x0F) == 0x0A) {
+            apple_memory[address] = (terminal_fifo_rdptr - terminal_fifo_wrptr);
+        }            
     }
+
 }

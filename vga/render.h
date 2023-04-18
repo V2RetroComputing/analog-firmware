@@ -9,6 +9,8 @@ extern uint16_t lores_palette[16];
 extern uint16_t text_fore, text_back, text_border;
 extern uint8_t status_line[81];
 
+extern void terminal_clear_screen();
+
 extern void update_status_left(const char *str);
 extern void update_status_right(const char *str);
 
@@ -27,7 +29,6 @@ extern void render_text80_line(bool p2, unsigned int line);
 extern void render_status_line();
 
 extern void render_terminal();
-extern void render_terminal_line(unsigned int line);
 
 extern void render_border(uint count);
 

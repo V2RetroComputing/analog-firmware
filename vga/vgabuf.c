@@ -7,6 +7,10 @@ volatile uint32_t mono_palette = 0;
 uint8_t __attribute__((section(".uninitialized_data."))) character_rom[4096];
 uint8_t __attribute__((section(".uninitialized_data."))) terminal_character_rom[4096];
 
+uint8_t __attribute__((section(".uninitialized_data."))) terminal_fifo[256];
+uint8_t terminal_fifo_wrptr = 0;
+uint8_t terminal_fifo_rdptr = 0;
+
 volatile uint8_t terminal_row = 0;
 volatile uint8_t terminal_col = 0;
 
