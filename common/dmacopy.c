@@ -11,7 +11,7 @@ void __noinline memcpy32(void *dst, void *src, uint32_t size) {
     if(!size) return;
 
     // Cowardly avoid unaligned transfers, let memcpy() handle them.
-    if((size & 0x3) || (((uint32_t)dst) & 0x3) || (((uint32_t)src) & 0x3)) {
+    if((size < 64) || (size & 0x3) || (((uint32_t)dst) & 0x3) || (((uint32_t)src) & 0x3)) {
         memcpy(dst, src, size);
         return;
     }
@@ -30,6 +30,47 @@ void __noinline memcpy32(void *dst, void *src, uint32_t size) {
     channel_config_set_write_increment(&c, true);
 
     dma_channel_configure(dmacopy_channel, &c, dst, src, (size >> 2), true);
+
+    dma_channel_wait_for_finish_blocking(dmacopy_channel);
+
+    dma_channel_abort(dmacopy_channel);
+
+    // Deinit the DMA channel
+    c = dma_channel_get_default_config(dmacopy_channel);
+    dma_channel_configure(dmacopy_channel, &c, NULL, NULL, 0, false);
+    channel_config_set_read_increment(&c, false);
+    channel_config_set_write_increment(&c, false);
+}
+
+void __noinline memset32(void *dst, uint8_t val, uint32_t size) {
+    dma_channel_config c;
+    uint32_t src = val;
+    src |= src << 8;
+    src |= src << 16;
+
+    // Nothing to do!
+    if(!size) return;
+
+    // Cowardly avoid unaligned transfers, let memset() handle them.
+    if((size < 64) || (size & 0x3) || (((uint32_t)dst) & 0x3)) {
+        memset(dst, val, size);
+        return;
+    }
+
+    // 32 bit transfers. Write address increments after each
+    // transfer (pointing to a location in dst).
+    // No DREQ is selected, so the DMA transfers as fast as it can.
+
+    // Get a free channel, panic() if there are none
+    if(dmacopy_channel == -1)
+        dmacopy_channel = dma_claim_unused_channel(true);
+
+    c = dma_channel_get_default_config(dmacopy_channel);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
+    channel_config_set_read_increment(&c, false);
+    channel_config_set_write_increment(&c, true);
+
+    dma_channel_configure(dmacopy_channel, &c, dst, &src, (size >> 2), true);
 
     dma_channel_wait_for_finish_blocking(dmacopy_channel);
 
