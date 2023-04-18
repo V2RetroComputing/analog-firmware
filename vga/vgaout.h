@@ -41,10 +41,12 @@ struct vga_scanline {
     uint32_t data[(VGA_WIDTH/2)+8];
 };
 
-void vga_prepare_frame();
-struct vga_scanline *vga_prepare_scanline();
-void vga_submit_scanline(struct vga_scanline *scanline);
+extern void vga_prepare_frame();
+extern struct vga_scanline *vga_prepare_scanline();
+extern void vga_submit_scanline(struct vga_scanline *scanline);
 
-void vga_stop();
-void vga_dpms_sleep();
-void vga_dpms_wake();extern void terminal_process_input();
+extern void vga_stop();
+extern void vga_dpms_sleep();
+extern void vga_dpms_wake();
+
+extern void terminal_process_input();
