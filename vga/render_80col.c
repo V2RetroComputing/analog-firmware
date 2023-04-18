@@ -15,6 +15,7 @@ int terminal_esc_pos = 0;
 uint16_t terminal_charset = 0;
 uint8_t terminal_width = 80;
 uint8_t terminal_height = 24;
+uint16_t term_fore, term_back, term_border;
 
 static inline uint_fast8_t char_terminal_bits(uint_fast8_t ch, uint_fast8_t glyph_line) {
     uint_fast8_t bits = terminal_character_rom[terminal_charset | (((uint_fast16_t)ch & 0x7f) << 4) | glyph_line];
@@ -191,9 +192,9 @@ static void DELAYED_COPY_CODE(render_terminal_line)(uint16_t line) {
     uint sl_pos = 0;
 
     // Pad 40 pixels on the left to center horizontally
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 8 pixels per word
+    sl->data[sl_pos++] = (term_border|THEN_EXTEND_7) | ((term_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (term_border|THEN_EXTEND_7) | ((term_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (term_border|THEN_EXTEND_3) | ((term_border|THEN_EXTEND_3) << 16); // 8 pixels per word
 
     for(uint col=0; col < 80; ) {
         // Grab 14 pixels from the next two characters
@@ -206,10 +207,10 @@ static void DELAYED_COPY_CODE(render_terminal_line)(uint16_t line) {
 
         // Translate each pair of bits into a pair of pixels
         for(int i=0; i < 7; i++) {
-            uint32_t pixeldata = (bits & 0x2000) ? (text_fore) : (text_back);
+            uint32_t pixeldata = (bits & 0x2000) ? (term_fore) : (term_back);
             pixeldata |= (bits & 0x1000) ?
-                (((uint32_t)text_fore) << 16) :
-                (((uint32_t)text_back) << 16);
+                (((uint32_t)term_fore) << 16) :
+                (((uint32_t)term_back) << 16);
             bits <<= 2;
 
             sl->data[sl_pos] = pixeldata;
@@ -218,9 +219,9 @@ static void DELAYED_COPY_CODE(render_terminal_line)(uint16_t line) {
     }
 
     // Pad 40 pixels on the right to center horizontally
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 8 pixels per word
+    sl->data[sl_pos++] = (term_border|THEN_EXTEND_7) | ((term_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (term_border|THEN_EXTEND_7) | ((term_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+    sl->data[sl_pos++] = (term_border|THEN_EXTEND_3) | ((term_border|THEN_EXTEND_3) << 16); // 8 pixels per word
 
     sl->length = sl_pos;
     sl->repeat_count = 1;
@@ -228,9 +229,14 @@ static void DELAYED_COPY_CODE(render_terminal_line)(uint16_t line) {
 }
 
 void DELAYED_COPY_CODE(render_terminal)() {
+    term_fore = lores_palette[TERMINAL_FORE];
+    term_back = lores_palette[TERMINAL_BACK];
+    term_border = lores_palette[TERMINAL_BORDER];
+
     for(uint line=0; line < 192; line++) {
         render_terminal_line((terminal_jsoffset<<3)+line+terminal_ssoffset);
     }
+
     if(terminal_ssoffset > 0) {
         terminal_ssoffset++;
         if(terminal_ssoffset >= 8) {
