@@ -13,7 +13,7 @@ static uint64_t next_flash_tick = 0;
 void DELAYED_COPY_CODE(update_text_flasher)() {
     uint64_t now = time_us_64();
     if(now > next_flash_tick) {
-        text_flasher_mask ^= 0x7f;
+        text_flasher_mask ^= 0xff;
 
         switch(current_machine) {
         default:

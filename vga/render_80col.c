@@ -185,19 +185,14 @@ void DELAYED_COPY_CODE(terminal_process_input)() {
 
 static void DELAYED_COPY_CODE(render_terminal_line)(uint16_t line) {
     uint glyph_line = line & 0x7;
-    const uint8_t *line_buf = (const uint8_t *)terminal_memory + (((line>>3) * 128) & 0xFFF);
+    const uint8_t *line_buf = (const uint8_t *)terminal_memory + (((line/10) * 128) & 0xFFF);
     bool cursor_row = ((((terminal_row+terminal_jsoffset) * 128) & 0xFFF) == (((line>>3) * 128) & 0xFFF));
 
     struct vga_scanline *sl = vga_prepare_scanline();
     uint sl_pos = 0;
 
-    // Pad 40 pixels on the left to center horizontally
-    sl->data[sl_pos++] = (term_border|THEN_EXTEND_7) | ((term_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (term_border|THEN_EXTEND_7) | ((term_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (term_border|THEN_EXTEND_3) | ((term_border|THEN_EXTEND_3) << 16); // 8 pixels per word
-
     for(uint col=0; col < 80; ) {
-        // Grab 14 pixels from the next two characters
+        // Grab 16 pixels from the next two characters
         uint32_t bits_a = char_terminal_bits(line_buf[col], glyph_line) ^ ((cursor_row && (col==terminal_col)) ? text_flasher_mask : 0x00);
         col++;
         uint32_t bits_b = char_terminal_bits(line_buf[col], glyph_line) ^ ((cursor_row && (col==terminal_col)) ? text_flasher_mask : 0x00);
@@ -218,10 +213,6 @@ static void DELAYED_COPY_CODE(render_terminal_line)(uint16_t line) {
         }
     }
 
-    // Pad 40 pixels on the right to center horizontally
-    sl->data[sl_pos++] = (term_border|THEN_EXTEND_7) | ((term_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (term_border|THEN_EXTEND_7) | ((term_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (term_border|THEN_EXTEND_3) | ((term_border|THEN_EXTEND_3) << 16); // 8 pixels per word
 
     sl->length = sl_pos;
     sl->repeat_count = 1;
@@ -233,7 +224,7 @@ void DELAYED_COPY_CODE(render_terminal)() {
     term_back = lores_palette[TERMINAL_BACK];
     term_border = lores_palette[TERMINAL_BORDER];
 
-    for(uint line=0; line < 192; line++) {
+    for(uint line=0; line < 240; line++) {
         render_terminal_line((terminal_jsoffset<<3)+line+terminal_ssoffset);
     }
 
