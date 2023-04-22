@@ -79,11 +79,11 @@ static void __noinline __time_critical_func(core1_loop)() {
             }
 #ifdef FUNCTION_VGA
         } else if(current_machine == MACHINE_AUTO) {
-            if((apple_memory[0x0403] == 0xD8) && (apple_memory[0x404] == 0xE5)) { // ROMXe
+            if((apple_memory[0x404] == 0xE5) && (apple_memory[0x0403] == 0xD8)) { // ROMXe
                 current_machine = MACHINE_IIE;
                 internal_flags |= IFLAGS_IIE_REGS;
                 internal_flags &= ~IFLAGS_IIGS_REGS;
-            } else if((apple_memory[0x0412] == 0xC5) && (apple_memory[0x0413] == 0xD8)) { // ROMX
+            } else if((apple_memory[0x0413] == 0xD8) && (apple_memory[0x0412] == 0xC5)) { // ROMX
                 current_machine = MACHINE_II;
                 internal_flags &= ~(IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
             } else if((apple_memory[0x0417] == 0xE7) && (apple_memory[0x416] == 0xC9)) { // Apple IIgs
@@ -101,7 +101,7 @@ static void __noinline __time_critical_func(core1_loop)() {
             } else if(apple_memory[0x0410] == 0xD0) { // Apple II/Plus/J-Plus with Autostart
                 current_machine = MACHINE_II;
                 internal_flags &= ~(IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
-            } else if((apple_memory[0x07D0] == 0xAA) && (apple_memory[0x07D1] == 0x60)) { // Apple II without Autostart
+            } else if((apple_memory[0x07D1] == 0x60) && (apple_memory[0x07D0] == 0xAA)) { // Apple II without Autostart
                 current_machine = MACHINE_II;
                 internal_flags &= ~(IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
             } else if(apple_memory[0x0410] == 0xF2) { // Pravetz!
