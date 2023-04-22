@@ -103,7 +103,7 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
         dots |= (line_mema[i] & 0x7f) << 25;
         i++;
 
-        if(soft_switches & SOFTSW_MONOCHROME) {
+        if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
             // Consume 8 pixels (32 subpixel bits)
             for(j = 0; j < 16; j++) {
                 pixeldata = ((dots & 1) ? (text_fore) : (text_back));
