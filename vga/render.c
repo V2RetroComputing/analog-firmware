@@ -207,8 +207,12 @@ void DELAYED_COPY_CODE(render_loop)() {
                 }
 #if defined(ANALOG_GS) || defined(OVERCLOCKED)
             } else if(soft_switches & SOFTSW_SHR) {
+                vga_prepare_frame();
                 render_shr();
 #endif
+            } else if(soft_switches & SOFTSW_TERMINAL) {
+                vga_prepare_frame();
+                render_terminal();
             } else {
                 vga_prepare_frame();
 
@@ -220,9 +224,6 @@ void DELAYED_COPY_CODE(render_loop)() {
                     render_border(32);
                 }
 
-                if(soft_switches & SOFTSW_TERMINAL) {
-                    render_terminal();
-                } else
                 switch(soft_switches & SOFTSW_MODE_MASK) {
                 case 0:
                     if(soft_switches & SOFTSW_DGR) {

@@ -184,9 +184,10 @@ void DELAYED_COPY_CODE(terminal_process_input)() {
 }
 
 static void DELAYED_COPY_CODE(render_terminal_line)(uint16_t line) {
-    uint glyph_line = line & 0x7;
-    const uint8_t *line_buf = (const uint8_t *)terminal_memory + (((line/10) * 128) & 0xFFF);
-    bool cursor_row = ((((terminal_row+terminal_jsoffset) * 128) & 0xFFF) == (((line>>3) * 128) & 0xFFF));
+    uint glyph_line = line % 10;
+    uint text_line_offset = ((line / 10) * 128) & 0xFFF;
+    const uint8_t *line_buf = (const uint8_t *)terminal_memory + text_line_offset;
+    bool cursor_row = ((((terminal_row+terminal_jsoffset) * 128) & 0xFFF) == text_line_offset);
 
     struct vga_scanline *sl = vga_prepare_scanline();
     uint sl_pos = 0;

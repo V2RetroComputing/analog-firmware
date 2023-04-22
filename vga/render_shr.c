@@ -17,8 +17,6 @@ static inline uint16_t rgb444(uint16_t a) {
 #endif
 
 void DELAYED_COPY_CODE(render_shr)() {
-    vga_prepare_frame();
-
     render_border(40);
 
     for(uint line=0; line < 200; line++) {
