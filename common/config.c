@@ -90,7 +90,7 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
                 romx_changed = 1;
                 break;
             case CFGTOKEN_MONO_00:
-                mono_palette = (config[i] >> 16) & 0xF;
+                mono_palette = (config[i] >> 20) & 0xF;
                 break;
             case CFGTOKEN_TBCOLOR:
                 terminal_tbcolor = (config[i] >> 16) & 0xFF;
