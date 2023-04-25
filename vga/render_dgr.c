@@ -65,7 +65,7 @@ static void DELAYED_COPY_CODE(render_dgr_line)(bool p2, uint line) {
     sl_pos++;
 
     i = 0;
-    if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
+    if(mono_rendering) {
         while(i < 40) {
             while((dotc <= 18) && (i < 40)) {
                 color1 |= dgr_dot_pattern[((i & 1) << 4) | (line_bufb[i] & 0xf)] << dotc;

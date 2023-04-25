@@ -79,7 +79,7 @@ static void DELAYED_COPY_CODE(render_lores_line)(bool p2, uint line) {
     sl2->data[sl_pos] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 8 pixels per word
     sl_pos++;
 
-    if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
+    if(mono_rendering) {
         for(i = 0; i < 40; i+=2) {
             color1 = lores_dot_pattern[line_buf[i] & 0xf] << 14;
             color2 = lores_dot_pattern[(line_buf[i] >> 4) & 0xf] << 14;

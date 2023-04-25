@@ -14,6 +14,7 @@ uint16_t text_border;
 
 compat_t machinefont = MACHINE_INVALID;
 bool userfont = false;
+bool mono_rendering = false;
 
 uint16_t DELAYED_COPY_DATA(mono_colors)[14] = {
     _RGB(0x00, 0x00, 0x00), _RGB(0xFF, 0xFF, 0xFF), // White Normal
@@ -196,6 +197,8 @@ void DELAYED_COPY_CODE(render_loop)() {
                 text_back = mono_colors[palette*2];
                 text_border = (palette == 0x6) ? text_fore : text_back;
             }
+            
+            mono_rendering = ((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8));
 
             if(internal_flags & IFLAGS_TEST) {
                 render_testpattern();

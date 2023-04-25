@@ -65,7 +65,7 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
     uint32_t pixeldata;
 
     i = 0;
-    if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
+    if(mono_rendering) {
         while(i < 40) {
             // Load in as many subpixels as possible
             while((dotc < 28) && (i < 40)) {
