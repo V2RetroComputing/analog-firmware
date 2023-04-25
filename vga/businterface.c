@@ -8,6 +8,40 @@
 volatile uint8_t *terminal_page = terminal_memory;
 
 void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
+    // Shadow parts of the Apple's memory by observing the bus write cycles
+    if((address < 0xC000) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+        // Apple IIgs: CARD_SELECT is pulled low by our CPLD when M2B0 is active and addr < $C000
+#ifdef ANALOG_GS
+        if(CARD_SELECT) {
+            private_memory[address] = value & 0xff;
+            return;
+        }
+#endif
+
+        // Mirror Video Memory from MAIN & AUX banks
+        if(soft_switches & SOFTSW_80STORE) {
+            if(soft_switches & SOFTSW_PAGE_2) {
+                if((address >= 0x400) && (address < 0x800)) {
+                    private_memory[address] = value & 0xff;
+                    return;
+                } else if((soft_switches & SOFTSW_HIRES_MODE) && (address >= 0x2000) && (address < 0x4000)) {
+                    private_memory[address] = value & 0xff;
+                    return;
+                }
+            }
+        } else if(soft_switches & SOFTSW_AUX_WRITE) {
+            if((address >= 0x200) && (address < 0xC000)) {
+                private_memory[address] = value & 0xff;
+                return;
+            }
+        }
+
+        if((address >= 0x200) && (address < 0xC000)) {
+            apple_memory[address] = value & 0xff;
+            return;
+        }
+    }
+
     // Shadow the soft-switches by observing all read & write bus cycles
     if((address & 0xff80) == 0xc000) {
         switch(address & 0x7f) {
@@ -176,38 +210,8 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
         }
     }
 
-    // Shadow parts of the Apple's memory by observing the bus write cycles
+    // Card Registers
     if((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0) {
-        // Mirror Video Memory from MAIN & AUX banks
-        if(soft_switches & SOFTSW_LINEARIZE) {
-            if((address >= 0x2000) && (address < 0xC000)) {
-                private_memory[address] = value & 0xff;
-                return;
-            }
-        }
-
-        if(soft_switches & SOFTSW_80STORE) {
-            if(soft_switches & SOFTSW_PAGE_2) {
-                if((address >= 0x400) && (address < 0x800)) {
-                    private_memory[address] = value & 0xff;
-                    return;
-                } else if((soft_switches & SOFTSW_HIRES_MODE) && (address >= 0x2000) && (address < 0x4000)) {
-                    private_memory[address] = value & 0xff;
-                    return;
-                }
-            }
-        } else if(soft_switches & SOFTSW_AUX_WRITE) {
-            if((address >= 0x200) && (address < 0xC000)) {
-                private_memory[address] = value & 0xff;
-                return;
-            }
-        }
-
-        if((address >= 0x200) && (address < 0xC000)) {
-            apple_memory[address] = value & 0xff;
-            return;
-        }
-
         if(CARD_SELECT && CARD_DEVSEL) {
             cardslot = (address >> 4) & 0x7;
             switch(address & 0x0F) {
