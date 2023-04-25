@@ -10,6 +10,7 @@
 #define PAGE2SEL ((soft_switches & (SOFTSW_80STORE | SOFTSW_PAGE_2)) == SOFTSW_PAGE_2)
 
 static void render_hires_line(bool p2, uint line);
+extern uint16_t dhgr_palette[16];
 
 static inline uint hires_line_to_mem_offset(uint line) {
     return ((line & 0x07) << 10) | ((line & 0x38) << 4) | (((line & 0xc0) >> 6) * 40);
@@ -37,7 +38,6 @@ void DELAYED_COPY_CODE(render_mixed_hires)() {
     }
 }
 
-
 static void DELAYED_COPY_CODE(render_hires_line)(bool p2, uint line) {
     struct vga_scanline *sl = vga_prepare_scanline();
     uint sl_pos = 0;
@@ -49,52 +49,66 @@ static void DELAYED_COPY_CODE(render_hires_line)(bool p2, uint line) {
     sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
     sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
 
-    // Each hires byte contains 7 pixels which may be shifted right 1/2 a pixel. That is
-    // represented here by 14 'dots' to precisely describe the half-pixel positioning.
-    //
-    // For each pixel, inspect a window of 8 dots around the pixel to determine the
-    // precise dot locations and colors.
-    //
-    // Dots would be scanned out to the CRT from MSB to LSB (left to right here):
-    //
-    //            previous   |        next
-    //              dots     |        dots
-    //        +-------------------+--------------------------------------------------+
-    // dots:  | 31 | 30 | 29 | 28 | 27 | 26 | 25 | 24 | 23 | ... | 14 | 13 | 12 | ...
-    //        |              |         |              |
-    //        \______________|_________|______________/
-    //                       |         |
-    //                       \_________/
-    //                         current
-    //                          pixel
+    uint32_t lastmsb = 0;
     uint32_t dots = 0;
-    uint oddness = 0;
-    uint i, j;
+    uint_fast8_t dotc = 0;
+    uint32_t pixeldata;
+    uint i;
 
-    // Load in the first 14 dots
-    dots |= (uint32_t)hires_dot_patterns[line_mem[0]] << 15;
-
-    for(i=1; i < 41; i++) {
-        // Load in the next 14 dots
-        uint b = (i < 40) ? line_mem[i] : 0;
-        if(b & 0x80) {
-            // Extend the last bit from the previous byte
-            dots |= (dots & (1u << 15)) >> 1;
-        }
-        dots |= (uint32_t)hires_dot_patterns[b] << 1;
-
-        if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
-            // Consume 14 dots
-            for(j = 0; j < 7; j++) {
-                uint32_t pixeldata = (dots & 0x40000000) ? (text_fore) : (text_back);
-                pixeldata |= (dots & 0x20000000) ?
-                    ((text_fore) << 16) :
-                    ((text_back) << 16);
-                dots <<= 2;
-                sl->data[sl_pos] = pixeldata;
-                sl_pos++;
+    if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
+        while(i < 40) {
+            // Load in as many subpixels as possible
+            while((dotc < 18) && (i < 40)) {
+                dots |= (hires_dot_patterns2[lastmsb | line_mem[i]]) << dotc;
+                lastmsb = (dotc>0) ? ((line_mem[i] & 0x40)<<2) : 0;
+                i++;
+                dotc += 14;
             }
-        } else {
+
+            // Consume pixels
+            while(dotc) {
+                pixeldata = ((dots & 1) ? (text_fore) : (text_back));
+                dots >>= 1;
+                pixeldata |= (((dots & 1) ? (text_fore) : (text_back))) << 16;
+                dots >>= 1;
+                sl->data[sl_pos++] = pixeldata;
+                dotc -= 2;
+            }
+        }
+    } else if(internal_flags & IFLAGS_OLDCOLOR) {
+        // Each hires byte contains 7 pixels which may be shifted right 1/2 a pixel. That is
+        // represented here by 14 'dots' to precisely describe the half-pixel positioning.
+        //
+        // For each pixel, inspect a window of 8 dots around the pixel to determine the
+        // precise dot locations and colors.
+        //
+        // Dots would be scanned out to the CRT from MSB to LSB (left to right here):
+        //
+        //            previous   |        next
+        //              dots     |        dots
+        //        +-------------------+--------------------------------------------------+
+        // dots:  | 31 | 30 | 29 | 28 | 27 | 26 | 25 | 24 | 23 | ... | 14 | 13 | 12 | ...
+        //        |              |         |              |
+        //        \______________|_________|______________/
+        //                       |         |
+        //                       \_________/
+        //                         current
+        //                          pixel
+        uint oddness = 0;
+        uint j;
+            
+        // Load in the first 14 dots
+        dots |= (uint32_t)hires_dot_patterns[line_mem[0]] << 15;
+
+        for(i=1; i < 41; i++) {
+            // Load in the next 14 dots
+            uint b = (i < 40) ? line_mem[i] : 0;
+            if(b & 0x80) {
+                // Extend the last bit from the previous byte
+                dots |= (dots & (1u << 15)) >> 1;
+            }
+            dots |= (uint32_t)hires_dot_patterns[b] << 1;
+
             // Consume 14 dots
             for(uint j=0; j < 7; j++) {
                 uint dot_pattern = oddness | ((dots >> 24) & 0xff);
@@ -104,6 +118,44 @@ static void DELAYED_COPY_CODE(render_hires_line)(bool p2, uint line) {
                 oddness ^= 0x100;
             }
         }
+    } else {
+        // Preload the first 14 subpixels
+        dots = (hires_dot_patterns2[line_mem[i]]);
+        lastmsb = (dotc>0) ? ((line_mem[i] & 0x40)<<2) : 0;
+        i++;
+        dotc = 14;
+
+        // First two pixels
+        pixeldata = lores_palette[0];
+        pixeldata |= ((lores_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
+        sl->data[sl_pos++] = pixeldata;
+
+        while(i < 40) {
+            // Load in as many subpixels as possible
+            if((dotc < 18) && (i < 40)) {
+                dots |= (hires_dot_patterns2[lastmsb | line_mem[i]]) << dotc;
+                lastmsb = (dotc>0) ? ((line_mem[i] & 0x40)<<2) : 0;
+                i++;
+                dotc += 14;
+            }
+
+            // Consume pixels
+            while(dotc >= 8) {
+                pixeldata = (lores_palette[dots & 0xf]);
+                pixeldata |= ((lores_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
+                sl->data[sl_pos++] = pixeldata;
+                pixeldata = (lores_palette[(dots & 0xc) | ((dots & 0x30) >> 4)]);
+                pixeldata |= ((lores_palette[(dots & 0xf0) >> 4] >> 1) & _RGBHALF) << 16;
+                sl->data[sl_pos++] = pixeldata;
+                dots >>= 4;
+                dotc -= 4;
+            }
+        }
+
+        // Last two pixels
+        pixeldata = (lores_palette[dots & 0xf]);
+        pixeldata |= ((lores_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
+        sl->data[sl_pos++] = pixeldata;
     }
 
     // Pad 40 pixels on the right to center horizontally

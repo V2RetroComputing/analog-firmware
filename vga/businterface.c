@@ -213,6 +213,11 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
             switch(address & 0x0F) {
             case 0x01:
                 mono_palette = (value >> 4) & 0xF;
+                if(value & 0x8) {
+                    internal_flags |= IFLAGS_OLDCOLOR;
+                } else {
+                    internal_flags &= ~IFLAGS_OLDCOLOR;
+                }
                 apple_memory[address] = value;
                 break;
             case 0x02:

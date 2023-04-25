@@ -7,8 +7,14 @@
 //#define PAGE2SEL (!(soft_switches & SOFTSW_80STORE) && (soft_switches & SOFTSW_PAGE_2))
 #define PAGE2SEL ((soft_switches & (SOFTSW_80STORE | SOFTSW_PAGE_2)) == SOFTSW_PAGE_2)
 
-extern uint16_t lores_palette[16];
-extern uint16_t lores_dot_pattern[16];
+extern uint16_t dhgr_palette[16];
+
+uint8_t DELAYED_COPY_DATA(dgr_dot_pattern)[32] = {
+    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+    0x08, 0x19, 0x2A, 0x3B, 0x4C, 0x5D, 0x6E, 0x7F,
+    0x00, 0x44, 0x08, 0x4C, 0x11, 0x55, 0x19, 0x5D,
+    0x22, 0x66, 0x2A, 0x6E, 0x33, 0x77, 0x3B, 0x7F,
+};
 
 static void render_dgr_line(bool p2, uint line);
 
@@ -40,7 +46,9 @@ static void DELAYED_COPY_CODE(render_dgr_line)(bool p2, uint line) {
     struct vga_scanline *sl2 = vga_prepare_scanline();
     uint sl_pos = 0;
     uint i, j;
-    uint32_t color1, color2, color3, color4;
+    uint32_t color1, color2;
+    uint_fast8_t dotc = 0;
+    uint32_t pixeldata;
 
     const uint8_t *line_bufa = (const uint8_t *)((p2 ? text_p2 : text_p1) + ((line & 0x7) << 7) + (((line >> 3) & 0x3) * 40));
     const uint8_t *line_bufb = (const uint8_t *)((p2 ? text_p4 : text_p3) + ((line & 0x7) << 7) + (((line >> 3) & 0x3) * 40));
@@ -56,42 +64,105 @@ static void DELAYED_COPY_CODE(render_dgr_line)(bool p2, uint line) {
     sl2->data[sl_pos] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 8 pixels per word
     sl_pos++;
 
-
+    i = 0;
     if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
-        for(i = 0; i < 40; i++) {
-            color1 = lores_dot_pattern[line_bufb[i] & 0xf] << 21;
-            color2 = lores_dot_pattern[(line_bufb[i] >> 4) & 0xf] << 21;
-            color1 |= lores_dot_pattern[line_bufa[i] & 0xf] << 7;
-            color2 |= lores_dot_pattern[(line_bufa[i] >> 4) & 0xf] << 7;
+        while(i < 40) {
+            while((dotc <= 18) && (i < 40)) {
+                color1 |= dgr_dot_pattern[((i & 1) << 4) | (line_bufb[i] & 0xf)] << dotc;
+                color2 |= dgr_dot_pattern[((i & 1) << 4) | ((line_bufb[i] >> 4) & 0xf)] << dotc;
+                dotc += 7;
+                color1 |= dgr_dot_pattern[((i & 1) << 4) | (line_bufa[i] & 0xf)] << dotc;
+                color2 |= dgr_dot_pattern[((i & 1) << 4) | ((line_bufa[i] >> 4) & 0xf)] << dotc;
+                dotc += 7;
+                i++;
+            }
 
-            for(j = 0; j < 7; j++) {
-                uint32_t pixeldata;
-
-                pixeldata = (color1 & 0x8000000) ? (text_fore) : (text_back);
-                pixeldata |= (color1 & 0x4000000) ? ((text_fore) << 16) : ((text_back) << 16);
-                color1 <<= 2;
+            // Consume pixels
+            while(dotc >= 2) {
+                pixeldata = ((color1 & 1) ? (text_fore) : (text_back));
+                pixeldata |= (((color1 & 2) ? (text_fore) : (text_back))) << 16;
                 sl1->data[sl_pos] = pixeldata;
 
-                pixeldata = (color2 & 0x8000000) ? (text_fore) : (text_back);
-                pixeldata |= (color2 & 0x4000000) ? ((text_fore) << 16) : ((text_back) << 16);
+                pixeldata = ((color2 & 1) ? (text_fore) : (text_back));
+                pixeldata |= (((color2 & 2) ? (text_fore) : (text_back))) << 16;
                 sl2->data[sl_pos] = pixeldata;
-                color2 <<= 2;
 
+                color1 >>= 2;
+                color2 >>= 2;
                 sl_pos++;
+                dotc -= 2;
             }
         }
     } else {
-        for(i=0; i < 40; i++) {
-            color1 = lores_palette[line_bufb[i] & 0xf];
-            color2 = lores_palette[(line_bufb[i] >> 4) & 0xf];
-            color3 = lores_palette[line_bufa[i] & 0xf];
-            color4 = lores_palette[(line_bufa[i] >> 4) & 0xf];
+        // Preload the first 14 subpixels
+        color1 = dgr_dot_pattern[line_bufb[i] & 0xf] << dotc;
+        color2 = dgr_dot_pattern[(line_bufb[i] >> 4) & 0xf] << dotc;
+        dotc += 7;
+        color1 |= dgr_dot_pattern[(line_bufa[i] & 0xf)] << dotc;
+        color2 |= dgr_dot_pattern[((line_bufa[i] >> 4) & 0xf)] << dotc;
+        dotc += 7;
+        i++;
 
-            // Each double lores pixel is 7 double hires pixels, or 7 VGA pixels wide
-            sl1->data[sl_pos] = (color1|THEN_EXTEND_6) | ((color3|THEN_EXTEND_6) << 16);
-            sl2->data[sl_pos] = (color2|THEN_EXTEND_6) | ((color4|THEN_EXTEND_6) << 16);
-            sl_pos++;
+        // First two pixels
+        pixeldata = dhgr_palette[0];
+        pixeldata |= ((dhgr_palette[color1 & 0xf] >> 1) & _RGBHALF) << 16;
+        sl1->data[sl_pos] = pixeldata;
+
+        pixeldata = dhgr_palette[0];
+        pixeldata |= ((dhgr_palette[color1 & 0xf] >> 1) & _RGBHALF) << 16;
+        sl2->data[sl_pos] = pixeldata;
+        sl_pos++;
+
+        while(i < 40) {
+            // Load in as many subpixels as possible
+            while((dotc <= 18) && (i < 40)) {
+                color1 |= dgr_dot_pattern[((i & 1) << 4) | (line_bufb[i] & 0xf)] << dotc;
+                color2 |= dgr_dot_pattern[((i & 1) << 4) | ((line_bufb[i] >> 4) & 0xf)] << dotc;
+                dotc += 7;
+                color1 |= dgr_dot_pattern[((i & 1) << 4) | (line_bufa[i] & 0xf)] << dotc;
+                color2 |= dgr_dot_pattern[((i & 1) << 4) | ((line_bufa[i] >> 4) & 0xf)] << dotc;
+                dotc += 7;
+                i++;
+            }
+
+            // Consume pixels
+            while(dotc >= 8) {
+                pixeldata = (dhgr_palette[color1 & 0xf]);
+                pixeldata |= ((dhgr_palette[color1 & 0xf] >> 1) & _RGBHALF) << 16;
+                sl1->data[sl_pos] = pixeldata;
+
+                pixeldata = (dhgr_palette[color2 & 0xf]);
+                pixeldata |= ((dhgr_palette[color2 & 0xf] >> 1) & _RGBHALF) << 16;
+                sl2->data[sl_pos] = pixeldata;
+
+                sl_pos++;
+
+                pixeldata = (dhgr_palette[(color1 & 0xc) | ((color1 & 0x30) >> 4)]);
+                pixeldata |= ((dhgr_palette[(color1 & 0xf0) >> 4] >> 1) & _RGBHALF) << 16;
+                sl1->data[sl_pos] = pixeldata;
+
+                pixeldata = (dhgr_palette[(color2 & 0xc) | ((color2 & 0x30) >> 4)]);
+                pixeldata |= ((dhgr_palette[(color2 & 0xf0) >> 4] >> 1) & _RGBHALF) << 16;
+                sl2->data[sl_pos] = pixeldata;
+
+                sl_pos++;
+
+                color1 >>= 4;
+                color2 >>= 4;
+                dotc -= 4;
+            }
         }
+
+        // Last two pixels
+        pixeldata = (dhgr_palette[color1 & 0xf]);
+        pixeldata |= ((dhgr_palette[color1 & 0xf] >> 1) & _RGBHALF) << 16;
+        sl1->data[sl_pos] = pixeldata;
+
+        pixeldata = (dhgr_palette[color2 & 0xf]);
+        pixeldata |= ((dhgr_palette[color2 & 0xf] >> 1) & _RGBHALF) << 16;
+        sl2->data[sl_pos] = pixeldata;
+
+        sl_pos++;
     }
 
     // Pad 40 pixels on the right to center horizontally

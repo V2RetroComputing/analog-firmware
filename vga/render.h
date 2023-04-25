@@ -57,12 +57,14 @@ extern void vga_deinit();
     (((((uint)(g) * 256 / 18) + 256) / 256) << 4) | \
     ((((uint)(b) * 256 / 18) + 256) / 256) \
 )
+#define _RGBHALF 0x777
 #else
 #define _RGB(r, g, b) ( \
     (((((uint)(r) * 256 / 36) + 128) / 256) << 6) | \
     (((((uint)(g) * 256 / 36) + 128) / 256) << 3) | \
     ((((uint)(b) * 256 / 36) + 128) / 256) \
 )
+#define _RGBHALF 0x0DB
 #endif
 
 #define RGB_BLACK   _RGB(0x00,0x00,0x00)

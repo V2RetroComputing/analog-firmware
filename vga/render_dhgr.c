@@ -61,67 +61,92 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
 
     // DHGR is weird. Nuff said.
     uint32_t dots = 0;
+    uint_fast8_t dotc = 0;
     uint32_t pixeldata;
-    int j;
 
     i = 0;
-    while(i < 40) {
-        // Load in the next 28 subpixels
-        dots  = (line_memb[i] & 0x7f) << 0;
-        dots |= (line_mema[i] & 0x7f) << 7;
-        i++;
-        dots |= (line_memb[i] & 0x7f) << 14;
-        dots |= (line_mema[i] & 0x7f) << 21;
-        i++;
+    if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
+        while(i < 40) {
+            // Load in as many subpixels as possible
+            while((dotc < 28) && (i < 40)) {
+                dots |= (line_memb[i] & 0x7f) << dotc;
+                dotc += 7;
+                dots |= (line_mema[i] & 0x7f) << dotc;
+                dotc += 7;
+                i++;
+            }
 
-        if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
-            // Consume 6 pixels (24 subpixel bits)
-            for(j = 0; j < 12; j++) {
+            // Consume pixels
+            while(dotc) {
                 pixeldata = ((dots & 1) ? (text_fore) : (text_back));
                 dots >>= 1;
                 pixeldata |= (((dots & 1) ? (text_fore) : (text_back))) << 16;
                 dots >>= 1;
                 sl->data[sl_pos++] = pixeldata;
+                dotc -= 2;
             }
-        } else {
-            // Consume 6 pixels (24 subpixel bits)
-            for(j = 0; j < 3; j++) {
+        }
+    } else if(internal_flags & IFLAGS_OLDCOLOR) {
+        while(i < 40) {
+            // Load in as many subpixels as possible
+            while((dotc <= 18) && (i < 40)) {
+                dots |= (line_memb[i] & 0x7f) << dotc;
+                dotc += 7;
+                dots |= (line_mema[i] & 0x7f) << dotc;
+                dotc += 7;
+                i++;
+            }
+
+            // Consume pixels
+            while(dotc >= 8) {
                 pixeldata = (dhgr_palette[dots & 0xf] | THEN_EXTEND_3);
                 dots >>= 4;
                 pixeldata |= (dhgr_palette[dots & 0xf] | THEN_EXTEND_3) << 16;
                 dots >>= 4;
                 sl->data[sl_pos++] = pixeldata;
+                dotc -= 8;
+            }
+        }
+    } else {
+        // Preload the first 14 subpixels
+        dots |= (line_memb[i] & 0x7f) << dotc;
+        dotc += 7;
+        dots |= (line_mema[i] & 0x7f) << dotc;
+        dotc += 7;
+        i++;
+
+        // First two pixels
+        pixeldata = dhgr_palette[0];
+        pixeldata |= ((dhgr_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
+        sl->data[sl_pos++] = pixeldata;
+
+        while(i < 40) {
+            // Load in as many subpixels as possible
+            while((dotc <= 18) && (i < 40)) {
+                dots |= (line_memb[i] & 0x7f) << dotc;
+                dotc += 7;
+                dots |= (line_mema[i] & 0x7f) << dotc;
+                dotc += 7;
+                i++;
+            }
+
+            // Consume pixels
+            while(dotc >= 8) {
+                pixeldata = (dhgr_palette[dots & 0xf]);
+                pixeldata |= ((dhgr_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
+                sl->data[sl_pos++] = pixeldata;
+                pixeldata = (dhgr_palette[(dots & 0xc) | ((dots & 0x30) >> 4)]);
+                pixeldata |= ((dhgr_palette[(dots & 0xf0) >> 4] >> 1) & _RGBHALF) << 16;
+                sl->data[sl_pos++] = pixeldata;
+                dots >>= 4;
+                dotc -= 4;
             }
         }
 
-        // 4 subpixels roll over to the next block
-        // Load in the next 28 subpixels
-        dots |= (line_memb[i] & 0x7f) << 4;
-        dots |= (line_mema[i] & 0x7f) << 11;
-        i++;
-        dots |= (line_memb[i] & 0x7f) << 18;
-        dots |= (line_mema[i] & 0x7f) << 25;
-        i++;
-
-        if((soft_switches & SOFTSW_MONOCHROME) || (mono_palette & 0x8)) {
-            // Consume 8 pixels (32 subpixel bits)
-            for(j = 0; j < 16; j++) {
-                pixeldata = ((dots & 1) ? (text_fore) : (text_back));
-                dots >>= 1;
-                pixeldata |= (((dots & 1) ? (text_fore) : (text_back))) << 16;
-                dots >>= 1;
-                sl->data[sl_pos++] = pixeldata;
-            }
-        } else {
-            // Consume 8 pixels (32 subpixel bits)
-            for(j = 0; j < 4; j++) {
-                pixeldata = (dhgr_palette[dots & 0xf] | THEN_EXTEND_3);
-                dots >>= 4;
-                pixeldata |= (dhgr_palette[dots & 0xf] | THEN_EXTEND_3) << 16;
-                dots >>= 4;
-                sl->data[sl_pos++] = pixeldata;
-            }
-        }
+        // Last two pixels
+        pixeldata = (dhgr_palette[dots & 0xf]);
+        pixeldata |= ((dhgr_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
+        sl->data[sl_pos++] = pixeldata;
     }
 
     // Pad 40 pixels on the right to center horizontally

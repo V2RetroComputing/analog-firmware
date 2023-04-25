@@ -105,6 +105,7 @@ extern volatile uint32_t internal_flags;
 #define SOFTSW_SHADOW_IO      0x04000000
 
 // V2 Analog specific softswitches
+#define IFLAGS_OLDCOLOR       0x08000000
 #define SOFTSW_TERMINAL       0x10000000
 #define IFLAGS_TEST           0x20000000
 #define IFLAGS_IIE_REGS       0x40000000
