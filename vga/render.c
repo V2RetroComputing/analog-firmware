@@ -219,10 +219,9 @@ void DELAYED_COPY_CODE(render_loop)() {
             } else {
                 vga_prepare_frame();
 
-                render_border(24);
+                render_border(16);
                 if(status_line[0] != 0) {
                     render_status_line();
-                    render_border(16);
                 } else {
                     render_border(32);
                 }

@@ -140,7 +140,7 @@ void DELAYED_COPY_CODE(render_testpattern)() {
 }
 
 void DELAYED_COPY_CODE(render_status_line)() {
-    for(uint glyph_line=0; glyph_line < 8; glyph_line++) {
+    for(uint glyph_line=0; glyph_line < 16; glyph_line++) {
         struct vga_scanline *sl = vga_prepare_scanline();
         uint8_t *line_buf = status_line;
         uint32_t bits;
