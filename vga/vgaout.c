@@ -249,6 +249,24 @@ struct vga_scanline * DELAYED_COPY_CODE(vga_prepare_scanline)() {
     return scanline;
 }
 
+// Set up and return a new display scanline
+struct vga_scanline * DELAYED_COPY_CODE(vga_prepare_scanline_quick)() {
+    struct vga_scanline *scanline = &scanline_queue[scanline_queue_head];
+
+    // Wait for the scanline buffer to become available again
+    while(scanline->_flags & FLAG_BUSY)
+        tight_loop_contents();
+
+    // Reinitialize the scanline struct for reuse
+    scanline->length = 0;
+    scanline->repeat_count = 0;
+    scanline->_flags = FLAG_BUSY;
+    scanline->_sync = (uint32_t)THEN_WAIT_HSYNC << 16;
+
+    scanline_queue_head = (scanline_queue_head + 1) & (NUM_SCANLINE_BUFFERS-1);
+
+    return scanline;
+}
 // Mark the scanline as ready so it can be displayed
 void DELAYED_COPY_CODE(vga_submit_scanline)(struct vga_scanline *scanline) {
     spin_lock_t *lock = spin_lock_instance(CONFIG_VGA_SPINLOCK_ID);

@@ -8,6 +8,7 @@
 extern uint16_t lores_palette[16];
 extern uint16_t text_fore, text_back, text_border;
 extern uint8_t status_line[81];
+extern bool mono_rendering;
 
 extern void terminal_clear_screen();
 
@@ -53,9 +54,9 @@ extern void vga_deinit();
 
 #ifdef ANALOG_GS
 #define _RGB(r, g, b) ( \
-    (((((uint)(r) * 256 / 18) + 256) / 256) << 8) | \
-    (((((uint)(g) * 256 / 18) + 256) / 256) << 4) | \
-    ((((uint)(b) * 256 / 18) + 256) / 256) \
+    (((((uint)(r) * 256 / 18) + 255) / 256) << 8) | \
+    (((((uint)(g) * 256 / 18) + 255) / 256) << 4) | \
+    ((((uint)(b) * 256 / 18) + 255) / 256) \
 )
 #define _RGBHALF 0x777
 #else

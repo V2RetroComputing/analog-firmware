@@ -9,7 +9,7 @@
 static void render_shr_line(uint16_t line);
 
 #ifdef ANALOG_GS
-#define rgb444(a) (a)
+#define rgb444(a) (a & 0xFFF)
 #else
 static inline uint16_t rgb444(uint16_t a) {
     return ((a & 0xe00) >> 3) | ((a & 0xe0) >> 2) | ((a & 0xe) >> 1);
@@ -27,7 +27,7 @@ void DELAYED_COPY_CODE(render_shr)() {
 }
 
 static void DELAYED_COPY_CODE(render_shr_line)(uint16_t line) {
-    struct vga_scanline *sl = vga_prepare_scanline();
+    struct vga_scanline *sl = vga_prepare_scanline_quick();
     uint sl_pos = 0;
     uint i;
 

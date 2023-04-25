@@ -43,6 +43,7 @@ struct vga_scanline {
 
 extern void vga_prepare_frame();
 extern struct vga_scanline *vga_prepare_scanline();
+extern struct vga_scanline *vga_prepare_scanline_quick();
 extern void vga_submit_scanline(struct vga_scanline *scanline);
 
 extern void vga_stop();
