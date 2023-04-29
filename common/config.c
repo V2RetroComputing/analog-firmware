@@ -15,10 +15,8 @@ extern volatile uint8_t romx_changed;
 
 #include <string.h>
 
-#ifdef ANALOG_GS
 volatile compat_t cfg_machine = MACHINE_AUTO;
 volatile compat_t current_machine = MACHINE_AUTO;
-#endif
 
 #ifdef FUNCTION_Z80
 volatile usbmux_t usbmux;
