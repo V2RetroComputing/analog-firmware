@@ -57,8 +57,13 @@ static void abus_main_setup(PIO pio, uint sm) {
     // map the SET pin group to the bus transceiver enable signals
     sm_config_set_set_pins(&c, CONFIG_PIN_APPLEBUS_CONTROL_BASE+1, 3);
 
+#ifdef ANALOG_GS
+    // configure left shift into ISR & autopush every 32 bits
+    sm_config_set_in_shift(&c, false, true, 32);
+#else
     // configure left shift into ISR & autopush every 26 bits
     sm_config_set_in_shift(&c, false, true, 26);
+#endif
 
     pio_sm_init(pio, sm, program_offset, &c);
 
