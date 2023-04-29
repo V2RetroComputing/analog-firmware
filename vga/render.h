@@ -6,6 +6,8 @@
 #define RENDER_TEST_PATTERN
 
 extern uint16_t lores_palette[16];
+extern uint16_t dhgr_palette[16];
+
 extern uint16_t text_fore, text_back, text_border;
 extern uint8_t status_line[81];
 extern bool mono_rendering;
@@ -25,8 +27,11 @@ extern void render_test_sleep();
 
 extern void update_text_flasher();
 extern void render_text();
+extern void render_mixed_text();
 extern void render_text40_line(bool p2, unsigned int line);
 extern void render_text80_line(bool p2, unsigned int line);
+extern void render_color_text40_line(unsigned int line);
+extern void render_color_text80_line(unsigned int line);
 extern void render_status_line();
 
 extern void render_terminal();

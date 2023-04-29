@@ -30,13 +30,7 @@ void DELAYED_COPY_CODE(render_mixed_dgr)() {
         render_dgr_line(PAGE2SEL, line);
     }
 
-    for(uint line=20; line < 24; line++) {
-        if(soft_switches & SOFTSW_80COL) {
-            render_text80_line(PAGE2SEL, line);
-        } else {
-            render_text40_line(PAGE2SEL, line);
-        }
-    }
+    render_mixed_text();
 }
 
 

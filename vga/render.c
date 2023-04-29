@@ -213,7 +213,7 @@ void DELAYED_COPY_CODE(render_loop)() {
                 vga_prepare_frame();
                 render_shr();
 #endif
-            } else if(soft_switches & SOFTSW_TERMINAL) {
+            } else if(internal_flags & IFLAGS_TERMINAL) {
                 vga_prepare_frame();
                 render_terminal();
             } else {

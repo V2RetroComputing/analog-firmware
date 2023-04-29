@@ -25,26 +25,24 @@ static inline uint dhgr_line_to_mem_offset(uint line) {
 
 
 void DELAYED_COPY_CODE(render_dhgr)() {
+    if((internal_flags & IFLAGS_VIDEO7) && (internal_flags & IFLAGS_V7_MODE3 == IFLAGS_V7_MODE3)) {
+        mono_rendering = true;
+    }
     for(uint line=0; line < 192; line++) {
         render_dhgr_line(PAGE2SEL, line);
     }
 }
 
-
 void DELAYED_COPY_CODE(render_mixed_dhgr)() {
+    if((internal_flags & IFLAGS_VIDEO7) && (internal_flags & IFLAGS_V7_MODE3 == IFLAGS_V7_MODE3)) {
+        mono_rendering = true;
+    }
     for(uint line=0; line < 160; line++) {
         render_dhgr_line(PAGE2SEL, line);
     }
 
-    for(uint line=20; line < 24; line++) {
-        if(soft_switches & SOFTSW_80COL) {
-            render_text80_line(PAGE2SEL, line);
-        } else {
-            render_text40_line(PAGE2SEL, line);
-        }
-    }
+    render_mixed_text();
 }
-
 
 static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
     struct vga_scanline *sl = vga_prepare_scanline();
@@ -54,10 +52,17 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
     const uint8_t *line_mema = (const uint8_t *)((p2 ? hgr_p2 : hgr_p1) + dhgr_line_to_mem_offset(line));
     const uint8_t *line_memb = (const uint8_t *)((p2 ? hgr_p4 : hgr_p3) + dhgr_line_to_mem_offset(line));
 
-    // Pad 40 pixels on the left to center horizontally
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
+    if((internal_flags & IFLAGS_VIDEO7) && ((internal_flags & IFLAGS_V7_MODE3) == IFLAGS_V7_MODE1)) {
+        // Pad 30 pixels on the left to center horizontally
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_7) << 16); // 12 pixels per word
+        sl->data[sl_pos++] = (text_border) | ((text_border) << 16); // 2 pixels per word
+    } else {
+        // Pad 40 pixels on the left to center horizontally
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
+    }
 
     // DHGR is weird. Nuff said.
     uint32_t dots = 0;
@@ -84,6 +89,27 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
                 dots >>= 1;
                 sl->data[sl_pos++] = pixeldata;
                 dotc -= 2;
+            }
+        }
+    } else if((internal_flags & IFLAGS_VIDEO7) && ((internal_flags & IFLAGS_V7_MODE3) == IFLAGS_V7_MODE1)) {
+        while(i < 40) {
+            // Load in as many subpixels as possible
+            while((dotc <= 18) && (i < 40)) {
+                dots |= (line_memb[i] & 0xff) << dotc;
+                dotc += 8;
+                dots |= (line_mema[i] & 0xff) << dotc;
+                dotc += 8;
+                i++;
+            }
+
+            // Consume pixels
+            while(dotc >= 8) {
+                pixeldata = (dhgr_palette[dots & 0xf] | THEN_EXTEND_3);
+                dots >>= 4;
+                pixeldata |= (dhgr_palette[dots & 0xf] | THEN_EXTEND_3) << 16;
+                dots >>= 4;
+                sl->data[sl_pos++] = pixeldata;
+                dotc -= 8;
             }
         }
     } else if(internal_flags & IFLAGS_OLDCOLOR) {
@@ -149,10 +175,17 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
         sl->data[sl_pos++] = pixeldata;
     }
 
-    // Pad 40 pixels on the right to center horizontally
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
-    sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
+    if((internal_flags & IFLAGS_VIDEO7) && ((internal_flags & IFLAGS_V7_MODE3) == IFLAGS_V7_MODE1)) {
+        // Pad 30 pixels on the right to center horizontally
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_7) << 16); // 12 pixels per word
+        sl->data[sl_pos++] = (text_border) | ((text_border) << 16); // 2 pixels per word
+    } else {
+        // Pad 40 pixels on the right to center horizontally
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_7) | ((text_border|THEN_EXTEND_7) << 16); // 16 pixels per word
+        sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
+    }
 
     sl->length = sl_pos;
     sl->repeat_count = 1;

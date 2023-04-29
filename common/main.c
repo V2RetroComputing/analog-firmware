@@ -46,25 +46,25 @@ static void __noinline __time_critical_func(core1_loop)() {
                 // Config memory in card slot-rom address space
                 if(ACCESS_WRITE) {
                     if((address & 0xFF) == 0xEC) {
-                        apple_memory[address] = value;
-                        cfptr = (cfptr & 0x0F00) | value;
+                        apple_memory[address] = (value & 0xff);
+                        cfptr = (cfptr & 0x0F00) | (value & 0xff);
                         apple_memory[address+2] = cfbuf[cfptr]; // $CnEE
                         apple_memory[address+3] = cfbuf[cfptr]; // $CnEF
                     }
                     if((address & 0xFF) == 0xED) {
-                        apple_memory[address] = value & 0x0F;
+                        apple_memory[address] = (value & 0x0F);
                         cfptr = ((cfptr & 0xFF) | (((uint16_t)value) << 8)) & 0xFFF;
                         apple_memory[address+1] = cfbuf[cfptr]; // $CnEE
                         apple_memory[address+2] = cfbuf[cfptr]; // $CnEF
                     }
                     if((address & 0xFF) == 0xEF) {
-                        cfbuf[cfptr] = value;
+                        cfbuf[cfptr] = (value & 0xff);
                         cfptr = (cfptr + 1) & 0x0FFF;
                         apple_memory[address-1] = cfbuf[cfptr]; // $CnEE
                         apple_memory[address]   = cfbuf[cfptr]; // $CnEF
                     }
                     if((address & 0xFF) >= 0xF0) {
-                        apple_memory[address] = value;
+                        apple_memory[address] = (value & 0xff);
                     }
                 } else if((address & 0xFF) == 0xEE) {
                     cfptr = (cfptr + 1) & 0x0FFF;
@@ -76,7 +76,12 @@ static void __noinline __time_critical_func(core1_loop)() {
             }
 #ifdef FUNCTION_VGA
         } else if(current_machine == MACHINE_AUTO) {
-            if((apple_memory[0x404] == 0xE5) && (apple_memory[0x0403] == 0xD8)) { // ROMXe
+            if(value & 0x08000000) {
+                // Hardware jumpered for IIGS mode.
+                current_machine = MACHINE_IIGS;
+                internal_flags &= ~IFLAGS_IIE_REGS;
+                internal_flags |= IFLAGS_IIGS_REGS;
+            } else if((apple_memory[0x404] == 0xE5) && (apple_memory[0x0403] == 0xD8)) { // ROMXe
                 current_machine = MACHINE_IIE;
                 internal_flags |= IFLAGS_IIE_REGS;
                 internal_flags &= ~IFLAGS_IIGS_REGS;
@@ -108,25 +113,27 @@ static void __noinline __time_critical_func(core1_loop)() {
 #endif
         } else switch(reset_state) {
             case 0:
-                if((value & 0x3FFFF00) == ((0xFFFC << 10) | 0x300))
+                if((value & 0x7FFFF00) == ((0xFFFC << 10) | 0x300))
                      reset_state++;
                 break;
             case 1:
-                if((value & 0x3FFFF00) == ((0xFFFD << 10) | 0x300))
+                if((value & 0x7FFFF00) == ((0xFFFD << 10) | 0x300))
                      reset_state++;
                 else
                      reset_state=0;
                 break;
             case 2:
-                if((value & 0x3FFFF00) == ((0xFA62 << 10) | 0x300))
+                if((value & 0x7FFFF00) == ((0xFA62 << 10) | 0x300))
                      reset_state++;
                 else
                      reset_state=0;
                 break;
             case 3:
 #ifdef FUNCTION_VGA
-                soft_switches = SOFTSW_TEXT_MODE;
+                soft_switches |= SOFTSW_TEXT_MODE;
                 soft_switches &= ~SOFTSW_80COL;
+                soft_switches &= ~SOFTSW_DGR;
+                internal_flags &= ~(IFLAGS_TERMINAL | IFLAGS_TEST | IFLAGS_V7_MODE3);
 #endif
             default:
                 reset_state = 0;

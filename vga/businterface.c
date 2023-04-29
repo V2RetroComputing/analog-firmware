@@ -8,14 +8,14 @@
 volatile uint8_t *terminal_page = terminal_memory;
 
 void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
-    // Shadow parts of the Apple's memory by observing the bus write cycles
-    if((address < 0xC000) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
-        // Apple IIgs: CARD_SELECT is pulled low by our CPLD when M2B0 is active and addr < $C000
 #ifdef ANALOG_GS
-        if(CARD_SELECT) {
+    // Apple IIgs: Bit 27 is GS jumper closed, Bit 26 is M2B0
+    if(value & 0x4000000) {
+        if(ACCESS_WRITE) {
             private_memory[address] = value & 0xff;
-            return;
         }
+        return;
+    }
 #endif
 
     // Shadow parts of the Apple's memory by observing the bus write cycles
@@ -156,6 +156,11 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
             }
             break;
         case 0x5f:
+            // Video 7 shift register
+            if(!soft_switches & SOFTSW_DGR) {
+                internal_flags = (internal_flags & 0xfffffffc) | ((internal_flags & 0x1) << 1) | ((soft_switches & SOFTSW_80COL) ? 1 : 0);
+            }
+
             if(internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) {
                 soft_switches &= ~SOFTSW_DGR;
             }
@@ -239,10 +244,15 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
             switch(address & 0x0F) {
             case 0x01:
                 mono_palette = (value >> 4) & 0xF;
-                if(value & 0x8) {
+                if(value & 8) {
                     internal_flags |= IFLAGS_OLDCOLOR;
                 } else {
                     internal_flags &= ~IFLAGS_OLDCOLOR;
+                }
+                if(value & 4) {
+                    internal_flags |= IFLAGS_VIDEO7;
+                } else {
+                    internal_flags &= ~IFLAGS_VIDEO7;
                 }
                 apple_memory[address] = value;
                 break;
@@ -255,10 +265,10 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                 apple_memory[address] = terminal_border;
                 break;
             case 0x08:
-                soft_switches &= ~SOFTSW_TERMINAL;
+                internal_flags &= ~IFLAGS_TERMINAL;
                 break;
             case 0x09:
-                soft_switches |= SOFTSW_TERMINAL;
+                internal_flags |= IFLAGS_TERMINAL;
                 break;
             case 0x0A:
                 terminal_fifo[terminal_fifo_wrptr++] = (value & 0xFF);

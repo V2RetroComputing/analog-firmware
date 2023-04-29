@@ -9,6 +9,7 @@
 
 uint8_t terminal_jsoffset = 0;
 uint8_t terminal_ssoffset = 0;
+bool terminal_inverse = 0;
 bool terminal_esc = 0;
 bool terminal_esc_crz = 0;
 int terminal_esc_pos = 0;
@@ -26,15 +27,19 @@ static inline uint_fast8_t char_terminal_bits(uint_fast8_t ch, uint_fast8_t glyp
     return (bits & 0x7f);
 }
 
+static void DELAYED_COPY_CODE(terminal_scroll)() {
+    // Clear the next text buffer line (using dma if possible)
+    memset((void*)(terminal_memory+(((terminal_height+terminal_jsoffset) * 128) & 0xFFF)), ' ', 128);
+
+    // Smooth scroll then increment jsoffset
+    terminal_ssoffset = 1;
+}
+
 static void DELAYED_COPY_CODE(terminal_linefeed)() {
     if(terminal_row < (terminal_height-1)) {
         terminal_row++;
     } else {
-        // Clear the next text buffer line (using dma if possible)
-        memset((void*)(terminal_memory+(((terminal_row+1+terminal_jsoffset) * 128) & 0xFFF)), ' ', 128);
-
-        // Smooth scroll then increment jsoffset
-        terminal_ssoffset = 1;
+        terminal_scroll();
     }
 }
 
@@ -89,7 +94,7 @@ void DELAYED_COPY_CODE(terminal_process_input)() {
                     terminal_clear_screen();
                     break;
                 case '1':
-                    soft_switches &= ~SOFTSW_TERMINAL;
+                    internal_flags &= ~IFLAGS_TERMINAL;
                     break;
                 case '2':
                     terminal_charset = 0;
@@ -104,17 +109,30 @@ void DELAYED_COPY_CODE(terminal_process_input)() {
             }
             terminal_esc_crz = false;
         } else if(terminal_esc) {
+            terminal_esc = false;
             switch(ch) {
+                case 'K':
+                case '>':
+                    terminal_esc = true;
                 case 'A':
                     terminal_advance_cursor();
                     break;
+                case 'J':
+                case '<':
+                    terminal_esc = true;
                 case 'B':
                     if(terminal_col > 0)
                         terminal_col--;
                     break;
+                case 'M':
+                case 'v':
+                    terminal_esc = true;
                 case 'C':
                     terminal_linefeed();
                     break;
+                case 'I':
+                case '^':
+                    terminal_esc = true;
                 case 'D': // Reverse Linefeed
                     if(terminal_row > 0)
                         terminal_row--;
@@ -128,14 +146,25 @@ void DELAYED_COPY_CODE(terminal_process_input)() {
                 case '@': // Clear screen
                     terminal_clear_screen();
                     break;
+                case '4':
+                    internal_flags &= ~IFLAGS_TERMINAL;
+                    break;
+                case '8':
+                    internal_flags |= IFLAGS_TERMINAL;
+                    break;
                 default:
                     terminal_memory[(((terminal_row+terminal_jsoffset) * 128) + terminal_col) & 0xFFF] = ch;
                     terminal_advance_cursor();
                     break;
             }
-            terminal_esc = false;
         } else
         switch(ch) {
+            case 0x07:
+                break;
+            case 0x08:
+                if(terminal_col > 0)
+                    terminal_col--;
+                break;
             case 0x0A: // Line Feed
                 terminal_linefeed();
                 break;
@@ -148,9 +177,24 @@ void DELAYED_COPY_CODE(terminal_process_input)() {
             case 0x0D: // Ctrl-M: Carriage Return
                 terminal_col = 0;
                 break;
+            case 0x0E: // Normal Text
+                terminal_inverse = false;
+                break;
+            case 0x0F: // Inverse Text
+                terminal_inverse = true;
+                break;
+            case 0x11:
+                internal_flags &= ~IFLAGS_TERMINAL;
+                break;
+            case 0x12:
+                internal_flags |= IFLAGS_TERMINAL;
+                break;
             case 0x13: // Ctrl-S: Xon/Xoff (unimplemented)
                 break;
             case 0x15: // Ctrl-U: Copy (unimplemented)
+                break;
+            case 0x17: // Ctrl-W: Scroll one line without moving cursor
+                terminal_scroll();
                 break;
             case 0x19: // Ctrl-Y: Home Cursor
                 terminal_row = 0;
@@ -176,7 +220,7 @@ void DELAYED_COPY_CODE(terminal_process_input)() {
                     terminal_row--;
                 break;
             default:
-                terminal_memory[(((terminal_row+terminal_jsoffset) * 128) + terminal_col) & 0xFFF] = ch;
+                terminal_memory[(((terminal_row+terminal_jsoffset) * 128) + terminal_col) & 0xFFF] = ch ^ (terminal_inverse ? 0x80 : 0x00);
                 terminal_advance_cursor();
                 break;
         }

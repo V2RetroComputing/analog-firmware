@@ -55,3 +55,6 @@
 
 #define CFGTOKEN_TBCOLOR      0x00005456 // "VT\xXX\x00" Custom default TBCOLOR
 #define CFGTOKEN_BORDER       0x00004256 // "VB\xXX\x00" Custom default BORDER
+
+#define CFGTOKEN_VIDEO7       0x00003756 // "V7\xXX\x00" Video 7 Enable / Disable
+#define CFGTOKEN_RGBCOLOR     0x00005043 // "CP\xXX\x04" RGB Palette Entry Override

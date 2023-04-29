@@ -15,8 +15,10 @@ extern volatile uint8_t romx_changed;
 
 #include <string.h>
 
+#ifdef ANALOG_GS
 volatile compat_t cfg_machine = MACHINE_AUTO;
 volatile compat_t current_machine = MACHINE_AUTO;
+#endif
 
 #ifdef FUNCTION_Z80
 volatile usbmux_t usbmux;
@@ -68,21 +70,29 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
         switch(config[i] & 0x0000FFFF) {
             case CFGTOKEN_HOST_AUTO:
                 cfg_machine = MACHINE_AUTO;
+                internal_flags |= (IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
                 break;
             case CFGTOKEN_HOST_II:
                 cfg_machine = MACHINE_II;
+                internal_flags &= ~(IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
                 break;
             case CFGTOKEN_HOST_IIE:
                 cfg_machine = MACHINE_IIE;
+                internal_flags |= IFLAGS_IIE_REGS;
+                internal_flags &= ~IFLAGS_IIGS_REGS;
                 break;
             case CFGTOKEN_HOST_IIGS:
                 cfg_machine = MACHINE_IIGS;
+                internal_flags &= ~IFLAGS_IIE_REGS;
+                internal_flags |= IFLAGS_IIGS_REGS;
                 break;
             case CFGTOKEN_HOST_PRAVETZ:
                 cfg_machine = MACHINE_PRAVETZ;
+                internal_flags &= ~(IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
                 break;
             case CFGTOKEN_HOST_BASIS:
                 cfg_machine = MACHINE_BASIS;
+                internal_flags &= ~(IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
                 break;
 #ifdef FUNCTION_VGA
             case CFGTOKEN_FONT_00:
@@ -97,6 +107,17 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
                 break;
             case CFGTOKEN_BORDER:
                 terminal_border = (config[i] >> 16) & 0xF;
+                break;
+            case CFGTOKEN_RGBCOLOR:
+                lores_palette[(config[i] >> 16) & 0xF] = config[i+1];
+                dhgr_palette[((config[i] >> 17) & 0x7) | ((config[i] >> 13) & 0x8)] = config[i+1];
+                break;
+            case CFGTOKEN_VIDEO7:
+                if((config[i] >> 16) & 1) {
+                    internal_flags |= IFLAGS_VIDEO7;
+                } else {
+                    internal_flags &= ~IFLAGS_VIDEO7;
+                }
                 break;
 #elif defined(FUNCTION_Z80)
             case CFGTOKEN_MUX_LOOP:
@@ -172,7 +193,17 @@ void DELAYED_COPY_CODE(default_config)() {
     strcpy((char*)wifi_ssid, "V2RetroNet");
     strcpy((char*)wifi_psk, "Analog");
 #endif
+#ifdef ANALOG_GS
+    cfg_machine = MACHINE_IIGS;
+    current_machine = MACHINE_IIGS;
+    internal_flags &= ~IFLAGS_IIE_REGS;
+    internal_flags |= IFLAGS_IIGS_REGS;
+#else
     cfg_machine = MACHINE_AUTO;
+    current_machine = MACHINE_AUTO;
+    internal_flags |= (IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
+#endif
+    internal_flags |= IFLAGS_VIDEO7;
 }
 
 int DELAYED_COPY_CODE(make_config)(uint32_t rev) {
@@ -277,6 +308,13 @@ int DELAYED_COPY_CODE(make_config)(uint32_t rev) {
     config_temp[i++] = CFGTOKEN_MONO_00 | ((mono_palette & 0xF) << 20);
     config_temp[i++] = CFGTOKEN_TBCOLOR | ((terminal_tbcolor & 0xFF) << 16);
     config_temp[i++] = CFGTOKEN_BORDER | ((terminal_border & 0xF) << 16);
+
+    config_temp[i++] = CFGTOKEN_VIDEO7 | ((internal_flags & IFLAGS_VIDEO7) ? (1ul<<16) : 0);
+
+    for(uint32_t j = 0; j < 16; j++) {
+        config_temp[i++] = CFGTOKEN_RGBCOLOR | (j << 16);
+        config_temp[i++] = lores_palette[j];
+    }
 #endif
     config_temp[i++] = NEWCONFIG_EOF_MARKER;
 
@@ -320,12 +358,14 @@ uint8_t DELAYED_COPY_CODE(get_config_rev)(uint32_t address) {
 // Every time we write the config we overwrite the older slot,
 // ensuring we don't leave the user without a configuration.
 // We increment the revision number each time, wrapping back to 0x00 from 0xFF.
+#if 0
 bool DELAYED_COPY_CODE(is_primary_config_newer)() {
     uint8_t a=get_config_rev(FLASH_CONFIG_PRIMARY);
     uint8_t b=get_config_rev(FLASH_CONFIG_SECONDARY);
     
     return ((int8_t)(a-b)) >= 0;
 }
+#endif
 
 bool DELAYED_COPY_CODE(read_config)() {
     if(is_config_valid(FLASH_CONFIG_ONETIME)) {
@@ -334,6 +374,13 @@ bool DELAYED_COPY_CODE(read_config)() {
         if(parse_config(FLASH_CONFIG_ONETIME))
             return true;
     }
+
+    if(is_config_valid(FLASH_CONFIG_PRIMARY)) {
+        if(parse_config(FLASH_CONFIG_PRIMARY))
+            return true;
+    }
+
+#if 0
     if(is_config_valid(FLASH_CONFIG_PRIMARY)) {
         if(!is_config_valid(FLASH_CONFIG_SECONDARY) || (is_primary_config_newer())) {
             if(parse_config(FLASH_CONFIG_PRIMARY))
@@ -344,6 +391,7 @@ bool DELAYED_COPY_CODE(read_config)() {
         if(parse_config(FLASH_CONFIG_SECONDARY))
             return true;
     }
+#endif
 
     default_config();
     return false;
@@ -359,6 +407,10 @@ bool DELAYED_COPY_CODE(write_config)(bool onetime) {
     vga_dpms_sleep();
 #endif
 
+    write_secondary = false;
+    rev = get_config_rev(FLASH_CONFIG_PRIMARY);
+
+#if 0
     if(is_config_valid(FLASH_CONFIG_PRIMARY) && is_config_valid(FLASH_CONFIG_SECONDARY)) {
         write_secondary = is_primary_config_newer();
         rev = write_secondary ? get_config_rev(FLASH_CONFIG_PRIMARY) : get_config_rev(FLASH_CONFIG_SECONDARY);
@@ -369,9 +421,9 @@ bool DELAYED_COPY_CODE(write_config)(bool onetime) {
         write_secondary = false;
         rev = get_config_rev(FLASH_CONFIG_SECONDARY);
     }
+#endif
 
     if(make_config(rev + 1) <= CONFIG_SIZE) {
-
         if(onetime) {
             flash_range_erase((FLASH_CONFIG_ONETIME-XIP_BASE), CONFIG_SIZE);
             flash_range_program((FLASH_CONFIG_ONETIME-XIP_BASE), (const uint8_t *)config_temp, CONFIG_SIZE);
@@ -401,6 +453,7 @@ uint8_t DELAYED_COPY_CODE(get_config_block)() {
     last_config_block = (FLASH_CONFIG_PRIMARY-XIP_BASE) / 4096;
     next_config_block = last_config_block;
 
+#if 0
     if(is_config_valid(FLASH_CONFIG_PRIMARY)) {
         if(!is_config_valid(FLASH_CONFIG_SECONDARY) || (is_primary_config_newer())) {
             last_config_block = (FLASH_CONFIG_PRIMARY-XIP_BASE) / 4096;
@@ -413,6 +466,7 @@ uint8_t DELAYED_COPY_CODE(get_config_block)() {
         last_config_block = (FLASH_CONFIG_SECONDARY-XIP_BASE) / 4096;
         next_config_block = (FLASH_CONFIG_PRIMARY-XIP_BASE) / 4096;
     }
+#endif
     
     config_rpybuf[5] = (next_config_block >> 8) & 0xFF;
     config_rpybuf[4] = (next_config_block >> 0) & 0xFF;
@@ -574,6 +628,31 @@ void DELAYED_COPY_CODE(config_handler)() {
     config_rpybuf[0] = REPLY_BUSY;
 
     switch(config_cmdbuf[0]) {
+        case 'P':
+            switch(config_cmdbuf[1]) {
+                default:
+                    retval = REPLY_ECMD;
+                    break;
+#ifdef FUNCTION_VGA
+                case 'r':
+                    memcpy((void *)cfbuf, lores_palette, 16*2);
+                    cfptr = 0;
+                    retval = REPLY_OK;
+                    break;
+                case 'T':
+                    for(uint j = 0; j < 16; j++) {
+#ifdef ANALOG_GS
+                        lores_palette[j] = ((uint16_t *)cfbuf)[j] & 0xFFF;
+#else
+                        lores_palette[j] = ((uint16_t *)cfbuf)[j] & 0x1FF;
+#endif
+                    }
+                    cfptr = 0;
+                    retval = REPLY_OK;
+                    break;
+#endif
+            }
+            break;
         case 'C':
             switch(config_cmdbuf[1]) {
                 default:
