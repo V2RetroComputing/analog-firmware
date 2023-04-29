@@ -19,9 +19,6 @@
 #include <pico/cyw43_arch.h>
 #endif
 
-#define ACCESS_READ  ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) != 0)
-#define ACCESS_WRITE ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)
-
 static void __noinline __time_critical_func(core1_loop)() {
     uint32_t value;
     uint32_t address;

@@ -18,6 +18,8 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
         }
 #endif
 
+    // Shadow parts of the Apple's memory by observing the bus write cycles
+    if(ACCESS_WRITE) {
         // Mirror Video Memory from MAIN & AUX banks
         if(soft_switches & SOFTSW_80STORE) {
             if(soft_switches & SOFTSW_PAGE_2) {
@@ -46,57 +48,57 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
     if((address & 0xff80) == 0xc000) {
         switch(address & 0x7f) {
         case 0x00:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 soft_switches &= ~SOFTSW_80STORE;
             }
             break;
         case 0x01:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 soft_switches |= SOFTSW_80STORE;
             }
             break;
         case 0x04:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 soft_switches &= ~SOFTSW_AUX_WRITE;
             }
             break;
         case 0x05:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 soft_switches |= SOFTSW_AUX_WRITE;
             }
             break;
         case 0x08:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 soft_switches &= ~SOFTSW_AUXZP;
             }
             break;
         case 0x09:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 soft_switches |= SOFTSW_AUXZP;
             }
             break;
         case 0x0c:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 soft_switches &= ~SOFTSW_80COL;
             }
             break;
         case 0x0d:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 soft_switches |= SOFTSW_80COL;
             }
             break;
         case 0x0e:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 soft_switches &= ~SOFTSW_ALTCHAR;
             }
             break;
         case 0x0f:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 soft_switches |= SOFTSW_ALTCHAR;
             }
             break;
         case 0x21:
-            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
                 if(value & 0x80) {
                     soft_switches |= SOFTSW_MONOCHROME;
                 } else {
@@ -105,22 +107,22 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
             }
             break;
         case 0x22:
-            if((internal_flags & IFLAGS_IIGS_REGS) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & IFLAGS_IIGS_REGS) && ACCESS_WRITE) {
                 apple_tbcolor = value & 0xff;
             }
             break;
         case 0x29:
-            if((internal_flags & IFLAGS_IIGS_REGS) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & IFLAGS_IIGS_REGS) && ACCESS_WRITE) {
                 soft_switches = (soft_switches & ~(SOFTSW_NEWVID_MASK << SOFTSW_NEWVID_SHIFT)) | ((value & SOFTSW_NEWVID_MASK) << SOFTSW_NEWVID_SHIFT);
             }
             break;
         case 0x34:
-            if((internal_flags & IFLAGS_IIGS_REGS) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & IFLAGS_IIGS_REGS) && ACCESS_WRITE) {
                 apple_border = value & 0x0f;
             }
             break;
         case 0x35:
-            if((internal_flags & IFLAGS_IIGS_REGS) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & IFLAGS_IIGS_REGS) && ACCESS_WRITE) {
                 soft_switches = (soft_switches & ~(SOFTSW_SHADOW_MASK << SOFTSW_SHADOW_SHIFT)) | ((value & SOFTSW_SHADOW_MASK) << SOFTSW_SHADOW_SHIFT);
             }
             break;
@@ -159,12 +161,12 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
             }
             break;
         case 0x7e:
-            if((internal_flags & IFLAGS_IIE_REGS) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & IFLAGS_IIE_REGS) && ACCESS_WRITE) {
                 soft_switches |= SOFTSW_IOUDIS;
             }
             break;
         case 0x7f:
-            if((internal_flags & IFLAGS_IIE_REGS) && ((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0)) {
+            if((internal_flags & IFLAGS_IIE_REGS) && ACCESS_WRITE) {
                 soft_switches &= ~SOFTSW_IOUDIS;
             }
             break;
@@ -173,24 +175,24 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
     }
 
     // Control sequences used by ROMX and ROMXe
-    if(value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) {
-        if(((address >> 8) == 0xCA) || ((address >> 8) == 0xFA)) {
-            switch(address & 0xFF) {
-            case 0xCA:
-                romx_unlocked = (romx_unlocked == 1) ? 2 : 1;
-                break;
-            case 0xFE:
-                romx_unlocked = (romx_unlocked == 2) ? 3 : 0;
-                if(romx_unlocked == 3)
-                    romx_type = address >> 8;
-                break;
-            default:
-                if(romx_unlocked != 3)
-                    romx_unlocked = 0;
-                break;
-            }
-        } else if(romx_unlocked == 3) {
-            if(romx_type == 0xFA) {
+    switch(current_machine) {
+    case MACHINE_IIE:
+        // Trigger on read sequence FACA FACA FAFE
+        if(ACCESS_READ) {
+            if((address >> 8) == 0xFA) {
+                switch(address & 0xFF) {
+                case 0xCA:
+                    romx_unlocked = (romx_unlocked == 1) ? 2 : 1;
+                    break;
+                case 0xFE:
+                    romx_unlocked = (romx_unlocked == 2) ? 3 : 0;
+                    break;
+                default:
+                    if(romx_unlocked != 3)
+                        romx_unlocked = 0;
+                    break;
+                }
+            } else if(romx_unlocked == 3) {
                 if((address & 0xFFF0) == 0xF810) {
                     romx_textbank = address & 0xF;
                 }
@@ -198,7 +200,26 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                     romx_changed = 1;
                     romx_unlocked = 0;
                 }
-            } else if(romx_type == 0xCA) {
+            }
+        }
+        break;
+    case MACHINE_II:
+        // Trigger on read sequence CACA CACA CAFE
+        if(ACCESS_READ) {
+            if((address >> 8) == 0xCA) {
+                switch(address & 0xFF) {
+                case 0xCA:
+                    romx_unlocked = (romx_unlocked == 1) ? 2 : 1;
+                    break;
+                case 0xFE:
+                    romx_unlocked = (romx_unlocked == 2) ? 3 : 0;
+                    break;
+                default:
+                    if(romx_unlocked != 3)
+                        romx_unlocked = 0;
+                    break;
+                }
+            } else if(romx_unlocked == 3) {
                 if((address & 0xFFF0) == 0xCFD0) {
                     romx_textbank = address & 0xF;
                 }
@@ -208,10 +229,11 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                 }
             }
         }
+        break;
     }
 
     // Card Registers
-    if((value & (1u << CONFIG_PIN_APPLEBUS_RW-CONFIG_PIN_APPLEBUS_DATA_BASE)) == 0) {
+    if(ACCESS_WRITE) {
         if(CARD_SELECT && CARD_DEVSEL) {
             cardslot = (address >> 4) & 0x7;
             switch(address & 0x0F) {
