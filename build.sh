@@ -21,3 +21,6 @@ build_firmware v2-analog-wifi-4ns-z80
 build_firmware v2-analog-wifi-8ns-z80
 build_firmware v2-analog-wifi-4ns-vga
 build_firmware v2-analog-wifi-8ns-vga
+build_firmware v2-analog-gs-4ns-z80
+build_firmware v2-analog-gs-8ns-z80
+build_firmware v2-analog-gs-4ns-vga
