@@ -202,8 +202,9 @@ void DELAYED_COPY_CODE(render_loop)() {
 
             if(internal_flags & IFLAGS_TEST) {
                 render_testpattern();
-                // Automatically dismiss the test pattern when the Apple II is seen.
-                if(((soft_switches & SOFTSW_MODE_MASK) != 0) && (testdone == 0)) {
+                // Assume the RP2040 has been hard reset and try to default to text display
+                if(busactive && (testdone == 0)) { // was ((soft_switches & SOFTSW_MODE_MASK) != 0)
+                    soft_switches |= SOFTSW_TEXT_MODE;
                     internal_flags &= ~IFLAGS_TEST;
                     testdone = 1;
                     render_about_init();
