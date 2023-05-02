@@ -157,7 +157,7 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
             break;
         case 0x5f:
             // Video 7 shift register
-            if(!soft_switches & SOFTSW_DGR) {
+            if(soft_switches & SOFTSW_DGR) {
                 internal_flags = (internal_flags & 0xfffffffc) | ((internal_flags & 0x1) << 1) | ((soft_switches & SOFTSW_80COL) ? 1 : 0);
             }
 

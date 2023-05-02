@@ -4,8 +4,6 @@
 #include "vga/render.h"
 #include "vga/vgaout.h"
 
-extern uint16_t lores_palette[16];
-
 //#define PAGE2SEL (!(soft_switches & SOFTSW_80STORE) && (soft_switches & SOFTSW_PAGE_2))
 #define PAGE2SEL ((soft_switches & (SOFTSW_80STORE | SOFTSW_PAGE_2)) == SOFTSW_PAGE_2)
 
@@ -52,7 +50,7 @@ static inline uint_fast8_t char_text_bits(uint_fast8_t ch, uint_fast8_t glyph_li
 void DELAYED_COPY_CODE(render_text)() {
     uint line;
 
-    if((internal_flags & IFLAGS_VIDEO7) && ((soft_switches & (SOFTSW_80STORE | SOFTSW_80COL | SOFTSW_DGR)) == SOFTSW_80STORE)) {
+    if((internal_flags & IFLAGS_VIDEO7) && ((soft_switches & (SOFTSW_80STORE | SOFTSW_80COL | SOFTSW_DGR)) == (SOFTSW_80STORE | SOFTSW_DGR))) {
         for(line=0; line < 24; line++) {
             render_color_text40_line(line);
         }
@@ -72,7 +70,7 @@ void DELAYED_COPY_CODE(render_text)() {
 void DELAYED_COPY_CODE(render_mixed_text)() {
     uint line;
 
-    if((internal_flags & IFLAGS_VIDEO7) && ((soft_switches & (SOFTSW_80STORE | SOFTSW_80COL | SOFTSW_DGR)) == SOFTSW_80STORE)) {
+    if((internal_flags & IFLAGS_VIDEO7) && ((soft_switches & (SOFTSW_80STORE | SOFTSW_80COL | SOFTSW_DGR)) == (SOFTSW_80STORE | SOFTSW_DGR))) {
         for(line=20; line < 24; line++) {
             render_color_text40_line(line);
         }
