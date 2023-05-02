@@ -9,23 +9,17 @@
 #ifdef ANALOG_GS
 #define THEN_WAIT_VSYNC (2 << 12)
 #define THEN_WAIT_HSYNC (3 << 12)
-#define THEN_EXTEND_31  (4 << 12)
-#define THEN_EXTEND_15  (5 << 12)
-#define THEN_EXTEND_13  (6 << 12)
-#define THEN_EXTEND_7   (7 << 12)
-#define THEN_EXTEND_6   (8 << 12)
-#define THEN_EXTEND_3   (9 << 12)
-#define THEN_EXTEND_1   (10 << 12)
+#define THEN_EXTEND_7   (4 << 12)
+#define THEN_EXTEND_6   (5 << 12)
+#define THEN_EXTEND_3   (6 << 12)
+#define THEN_EXTEND_1   (7 << 12)
 #else
 #define THEN_WAIT_VSYNC (2 << 9)
 #define THEN_WAIT_HSYNC (3 << 9)
-#define THEN_EXTEND_31  (4 << 9)
-#define THEN_EXTEND_15  (5 << 9)
-#define THEN_EXTEND_13  (6 << 9)
-#define THEN_EXTEND_7   (7 << 9)
-#define THEN_EXTEND_6   (8 << 9)
-#define THEN_EXTEND_3   (9 << 9)
-#define THEN_EXTEND_1   (10 << 9)
+#define THEN_EXTEND_7   (4 << 9)
+#define THEN_EXTEND_6   (5 << 9)
+#define THEN_EXTEND_3   (6 << 9)
+#define THEN_EXTEND_1   (7 << 9)
 #endif
 
 struct vga_scanline {
