@@ -69,6 +69,38 @@ static void DELAYED_COPY_CODE(render_hires_line)(bool p2, uint line) {
                 dotc -= 2;
             }
         }
+    } else if((internal_flags & IFLAGS_VIDEO7) && (soft_switches & SOFTSW_80STORE)) {
+        const uint8_t *color_mem = (const uint8_t *)(hgr_p3) + hires_line_to_mem_offset(line);
+        uint16_t color_on, color_off;
+
+        // Video 7 F/B HiRes
+        while(i < 40) {
+            if(dotc == 0) {
+                dots |= (line_mem[i] & 0x7f) << dotc;
+                color_on = lores_palette[(color_mem[i] >> 4) & 0xF];
+                color_off = lores_palette[(color_mem[i] >> 0) & 0xF];
+                i++;
+                dotc += 7;
+            }
+
+            pixeldata = ((dots & 1) ? (color_on) : (color_off));
+            dots >>= 1;
+            dotc--;
+
+            if(dotc == 0) {
+                dots |= (line_mem[i] & 0x7f) << dotc;
+                color_on = lores_palette[(color_mem[i] >> 4) & 0xF];
+                color_off = lores_palette[(color_mem[i] >> 0) & 0xF];
+                i++;
+                dotc += 7;
+            }
+
+            pixeldata |= ((dots & 1) ? (color_on) : (color_off)) << 16;
+            dots >>= 1;
+            dotc--;
+
+            sl->data[sl_pos++] = pixeldata;
+        }
     } else if(internal_flags & IFLAGS_OLDCOLOR) {
         // Each hires byte contains 7 pixels which may be shifted right 1/2 a pixel. That is
         // represented here by 14 'dots' to precisely describe the half-pixel positioning.
