@@ -112,7 +112,7 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
                 break;
             case CFGTOKEN_VIDEO7:
                 if((config[i] >> 16) & 1) {
-                    internal_flags |= IFLAGS_VIDEO7;
+                    internal_flags |= IFLAGS_VIDEO7 | IFLAGS_V7_MODE3;
                 } else {
                     internal_flags &= ~IFLAGS_VIDEO7;
                 }
@@ -201,7 +201,7 @@ void DELAYED_COPY_CODE(default_config)() {
     current_machine = MACHINE_AUTO;
     internal_flags |= (IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
 #endif
-    internal_flags |= IFLAGS_VIDEO7;
+    internal_flags |= IFLAGS_VIDEO7 | IFLAGS_V7_MODE3;
 }
 
 int DELAYED_COPY_CODE(make_config)(uint32_t rev) {
