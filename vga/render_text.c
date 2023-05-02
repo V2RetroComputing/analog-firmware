@@ -52,15 +52,9 @@ static inline uint_fast8_t char_text_bits(uint_fast8_t ch, uint_fast8_t glyph_li
 void DELAYED_COPY_CODE(render_text)() {
     uint line;
 
-    if((internal_flags & IFLAGS_VIDEO7) && !(soft_switches & SOFTSW_DGR)) {
-        if(soft_switches & SOFTSW_80COL) {
-            for(line=0; line < 24; line++) {
-                render_color_text80_line(line);
-            }
-        } else {
-            for(line=0; line < 24; line++) {
-                render_color_text40_line(line);
-            }
+    if((internal_flags & IFLAGS_VIDEO7) && ((soft_switches & (SOFTSW_80STORE | SOFTSW_80COL | SOFTSW_DGR)) == SOFTSW_80STORE)) {
+        for(line=0; line < 24; line++) {
+            render_color_text40_line(line);
         }
     } else {
         if(soft_switches & SOFTSW_80COL) {
@@ -78,15 +72,9 @@ void DELAYED_COPY_CODE(render_text)() {
 void DELAYED_COPY_CODE(render_mixed_text)() {
     uint line;
 
-    if((internal_flags & IFLAGS_VIDEO7) && !(soft_switches & SOFTSW_DGR)) {
-        if(soft_switches & SOFTSW_80COL) {
-            for(line=20; line < 24; line++) {
-                render_color_text80_line(line);
-            }
-        } else {
-            for(line=20; line < 24; line++) {
-                render_color_text40_line(line);
-            }
+    if((internal_flags & IFLAGS_VIDEO7) && ((soft_switches & (SOFTSW_80STORE | SOFTSW_80COL | SOFTSW_DGR)) == SOFTSW_80STORE)) {
+        for(line=20; line < 24; line++) {
+            render_color_text40_line(line);
         }
     } else {
         if(soft_switches & SOFTSW_80COL) {
