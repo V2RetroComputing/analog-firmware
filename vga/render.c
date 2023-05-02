@@ -208,7 +208,7 @@ void DELAYED_COPY_CODE(render_loop)() {
                     testdone = 1;
                     render_about_init();
                 }
-#if defined(ANALOG_GS) || defined(OVERCLOCKED)
+#if defined(ANALOG_GS)
             } else if(soft_switches & SOFTSW_SHR) {
                 vga_prepare_frame();
                 render_shr();
