@@ -4,6 +4,18 @@
 #include "common/abus.h"
 #include "vga/businterface.h"
 #include "vga/vgabuf.h"
+#include "vga/render.h"
+
+uint8_t lores_to_dhgr[16] = {
+    0x0, 0x8,
+    0x1, 0x9,
+    0x2, 0xA,
+    0x3, 0xB,
+    0x4, 0xC,
+    0x5, 0xD,
+    0x6, 0xE,
+    0x7, 0xF
+};
 
 volatile uint8_t *terminal_page = terminal_memory;
 
@@ -240,6 +252,8 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
     // Card Registers
     if(ACCESS_WRITE) {
         if(CARD_SELECT && CARD_DEVSEL) {
+            uint8_t color_index;
+
             cardslot = (address >> 4) & 0x7;
             switch(address & 0x0F) {
             case 0x01:
@@ -279,6 +293,51 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                     romx_textbank = (value & 0xFF);
                     romx_changed = 1;
                 }
+                break;
+            case 0x0C:
+                apple_memory[address] = value;
+                break;
+            case 0x0D:
+                color_index = (apple_memory[address-1] >> 4) & 0xF;
+#ifdef ANALOG_GS
+                switch(apple_memory[address-1] & 3) {
+                    case 1:
+                        lores_palette[color_index] =
+                            (lores_palette[color_index] & 0x00FF) |
+                            (((uint16_t)(value & 0xF)) << 8);
+                        break;
+                    case 2:
+                        lores_palette[color_index] =
+                            (lores_palette[color_index] & 0x0F0F) |
+                            (((uint16_t)(value & 0xF)) << 4);
+                        break;
+                    case 3:
+                        lores_palette[color_index] =
+                            (lores_palette[color_index] & 0x0FF0) |
+                            (((uint16_t)(value & 0xF)) << 0);
+                        break;
+                }
+#else
+                switch(apple_memory[address-1] & 3) {
+                    case 1:
+                        lores_palette[color_index] =
+                            (lores_palette[color_index] & 0x003F) |
+                            (((uint16_t)(value & 0x7)) << 6);
+                        break;
+                    case 2:
+                        lores_palette[color_index] =
+                            (lores_palette[color_index] & 0x01C7) |
+                            (((uint16_t)(value & 0x7)) << 3);
+                        break;
+                    case 3:
+                        lores_palette[color_index] =
+                            (lores_palette[color_index] & 0x01F8) |
+                            (((uint16_t)(value & 0x7)) << 0);
+                        break;
+                }
+#endif
+                dhgr_palette[lores_to_dhgr[color_index]] = lores_palette[color_index];
+                apple_memory[address] = value;
                 break;
             }
         }
