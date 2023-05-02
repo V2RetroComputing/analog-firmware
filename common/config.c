@@ -808,6 +808,12 @@ void DELAYED_COPY_CODE(config_handler)() {
                     config_rpybuf[rs++] = HWREV;  // '1'
                     break;
 
+                case 'j':
+                    // Read jumpers
+                    retval = REPLY_OK;
+                    config_rpybuf[rs++] = jumpers;
+                    break;
+
                 case 'd':
                     // Identify Date Request
                     retval = REPLY_OK;

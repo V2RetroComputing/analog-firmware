@@ -35,6 +35,9 @@ static void __noinline __time_critical_func(core1_loop)() {
             }
         }
 
+#ifdef ANALOG_GS
+        jumpers = (value >> 26) & 0x3f;
+#endif
         busactive = 1;
 
         if(CARD_SELECT) {

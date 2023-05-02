@@ -16,6 +16,8 @@ extern volatile uint8_t cfbuf[4096];
 #define config_cmdbuf ((uint8_t*)(apple_memory+0xC0F0+(cardslot<<8)))
 #define config_rpybuf ((uint8_t*)(apple_memory+0xC0F8+(cardslot<<8)))
 
+extern volatile uint8_t jumpers;
+
 #ifdef FUNCTION_VGA
 extern volatile uint8_t *text_p1;
 extern volatile uint8_t *text_p2;

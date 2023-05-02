@@ -11,6 +11,8 @@ volatile uint32_t busactive = 0;
 volatile uint8_t __attribute__((section (".appledata."))) apple_memory[64*1024];
 volatile uint8_t __attribute__((section (".appledata."))) private_memory[64*1024];
 
+volatile uint8_t jumpers = 0;
+
 #ifdef FUNCTION_VGA
 volatile uint8_t *text_p1 = apple_memory + 0x0400;
 volatile uint8_t *text_p2 = apple_memory + 0x0800;
