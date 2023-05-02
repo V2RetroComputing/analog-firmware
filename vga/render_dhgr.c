@@ -25,7 +25,7 @@ static inline uint dhgr_line_to_mem_offset(uint line) {
 
 
 void DELAYED_COPY_CODE(render_dhgr)() {
-    if((internal_flags & IFLAGS_VIDEO7) && (internal_flags & IFLAGS_V7_MODE3 == IFLAGS_V7_MODE3)) {
+    if((internal_flags & IFLAGS_VIDEO7) && (internal_flags & IFLAGS_V7_MODE3 == IFLAGS_V7_MODE0)) {
         mono_rendering = true;
     }
     for(uint line=0; line < 192; line++) {
@@ -34,7 +34,7 @@ void DELAYED_COPY_CODE(render_dhgr)() {
 }
 
 void DELAYED_COPY_CODE(render_mixed_dhgr)() {
-    if((internal_flags & IFLAGS_VIDEO7) && (internal_flags & IFLAGS_V7_MODE3 == IFLAGS_V7_MODE3)) {
+    if((internal_flags & IFLAGS_VIDEO7) && (internal_flags & IFLAGS_V7_MODE3 == IFLAGS_V7_MODE0)) {
         mono_rendering = true;
     }
     for(uint line=0; line < 160; line++) {
@@ -64,7 +64,7 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
         sl->data[sl_pos++] = (text_border|THEN_EXTEND_3) | ((text_border|THEN_EXTEND_3) << 16); // 16 pixels per word
     }
 
-    // DHGR is weird. Nuff said.
+    // DHGR is weird. Video-7 just makes it weirder. Nuff said.
     uint32_t dots = 0;
     uint_fast8_t dotc = 0;
     uint32_t pixeldata;
@@ -91,7 +91,7 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line) {
                 dotc -= 2;
             }
         }
-    } else if((internal_flags & IFLAGS_VIDEO7) && ((internal_flags & IFLAGS_V7_MODE3) == IFLAGS_V7_MODE1)) {
+    } else if((internal_flags & IFLAGS_VIDEO7) && ((internal_flags & IFLAGS_V7_MODE3) == IFLAGS_V7_MODE2)) {
         while(i < 40) {
             // Load in as many subpixels as possible
             while((dotc <= 18) && (i < 40)) {
