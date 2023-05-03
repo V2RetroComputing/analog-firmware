@@ -1,6 +1,6 @@
-#define BUILDDATE 0x20230403
-#define BUILDID 0x0171
-#define BUILDSTR " 3 Apr 2023 Build 0171"
+#define BUILDDATE 0x20230502
+#define BUILDID 0x0182
+#define BUILDSTR " 2 May 2023 Build 0182"
 
 #ifdef ANALOG_GS
 #define HWSTRING "     V2 Analog GS Rev1"
