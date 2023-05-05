@@ -21,7 +21,7 @@
 ;      x  - select Data, active low
 .wrap_target
 next_bus_cycle:
-    set PINS, 0b111                     ; disable tranceivers
+    set PINS, 0b011                     ; disable tranceivers
     wait 1 GPIO, PHI0_GPIO [5]          ; wait for PHI0 to rise.
     set PINS, 0b011  [5]                ; enable AddrHi tranceiver and delay for transceiver propagation delay (24ns)
     in PINS, 8                          ; read AddrHi[7:0]
@@ -33,7 +33,7 @@ next_bus_cycle:
 write_cycle:
     ; the current time is P0+88ns (P0 + 10ns + 2 clocks (input synchronizers) + 20 instructions)
 
-    set PINS, 0b110  [19]               ; enable Data tranceiver & wait until both ~DEVSEL and the written data are valid (P0+170ns)
+    set PINS, 0b110  [31]               ; enable Data tranceiver & wait until both ~DEVSEL and the written data are valid (P0+216ns)
     in PINS, 10                         ; read R/W, ~DEVSEL, and Data[7:0], then autopush
     wait 0 GPIO, PHI0_GPIO  [7]         ; wait for PHI0 to fall
     jmp next_bus_cycle
