@@ -8,6 +8,7 @@
 
 //#define PAGE2SEL (!(soft_switches & SOFTSW_80STORE) && (soft_switches & SOFTSW_PAGE_2))
 #define PAGE2SEL ((soft_switches & (SOFTSW_80STORE | SOFTSW_PAGE_2)) == SOFTSW_PAGE_2)
+uint16_t __attribute__((section(".uninitialized_data."))) lhalf_palette[16];
 
 static void render_hires_line(bool p2, uint line);
 
@@ -66,7 +67,7 @@ static void DELAYED_COPY_CODE(render_hires_line)(bool p2, uint line) {
                 dotc -= 2;
             }
         }
-    } else if(internal_flags & IFLAGS_OLDCOLOR) {
+    } else {
         // Each hires byte contains 7 pixels which may be shifted right 1/2 a pixel. That is
         // represented here by 14 'dots' to precisely describe the half-pixel positioning.
         //
@@ -109,44 +110,6 @@ static void DELAYED_COPY_CODE(render_hires_line)(bool p2, uint line) {
                 oddness ^= 0x100;
             }
         }
-    } else {
-        // Preload the first 14 subpixels
-        dots = (hires_dot_patterns2[line_mem[i]]);
-        lastmsb = (dotc>0) ? ((line_mem[i] & 0x40)<<2) : 0;
-        i++;
-        dotc = 14;
-
-        // First two pixels
-        pixeldata = lores_palette[0];
-        pixeldata |= ((lores_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
-        sl->data[sl_pos++] = pixeldata;
-
-        while(i < 40) {
-            // Load in as many subpixels as possible
-            if((dotc < 18) && (i < 40)) {
-                dots |= (hires_dot_patterns2[lastmsb | line_mem[i]]) << dotc;
-                lastmsb = (dotc>0) ? ((line_mem[i] & 0x40)<<2) : 0;
-                i++;
-                dotc += 14;
-            }
-
-            // Consume pixels
-            while(dotc >= 8) {
-                pixeldata = (lores_palette[dots & 0xf]);
-                pixeldata |= ((lores_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
-                sl->data[sl_pos++] = pixeldata;
-                pixeldata = (lores_palette[(dots & 0xc) | ((dots & 0x30) >> 4)]);
-                pixeldata |= ((lores_palette[(dots & 0xf0) >> 4] >> 1) & _RGBHALF) << 16;
-                sl->data[sl_pos++] = pixeldata;
-                dots >>= 4;
-                dotc -= 4;
-            }
-        }
-
-        // Last two pixels
-        pixeldata = (lores_palette[dots & 0xf]);
-        pixeldata |= ((lores_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
-        sl->data[sl_pos++] = pixeldata;
     }
 
     // Pad 40 pixels on the right to center horizontally
