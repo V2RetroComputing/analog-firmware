@@ -268,6 +268,16 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                 } else {
                     internal_flags &= ~IFLAGS_VIDEO7;
                 }
+                if(value & 2) {
+                    internal_flags |= IFLAGS_GRILL;
+                } else {
+                    internal_flags &= ~IFLAGS_GRILL;
+                }
+                if(value & 1) {
+                    internal_flags |= IFLAGS_INTERP;
+                } else {
+                    internal_flags &= ~IFLAGS_INTERP;
+                }
                 apple_memory[address] = value;
                 break;
             case 0x02:

@@ -58,3 +58,6 @@
 
 #define CFGTOKEN_VIDEO7       0x00003756 // "V7\xXX\x00" Video 7 Enable / Disable
 #define CFGTOKEN_RGBCOLOR     0x00005043 // "CP\xXX\x04" RGB Palette Entry Override
+
+#define CFGTOKEN_INTERP       0x00004956 // "VI\x0X\x00" RGB Interpolation
+#define CFGTOKEN_GRILL        0x00004756 // "VG\x0X\x00" RGB Aperture Grill
