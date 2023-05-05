@@ -5,6 +5,8 @@
 // Uncomment to enable test patter generator
 #define RENDER_TEST_PATTERN
 
+extern uint16_t lhalf_palette[16];
+extern uint16_t half_palette[16];
 extern uint16_t lores_palette[16];
 extern uint16_t dhgr_palette[16];
 

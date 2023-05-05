@@ -5,6 +5,7 @@
 #include "vga/vgabuf.h"
 #include "vga/render.h"
 #include "vga/vgaout.h"
+#include "vga/dhgr_patterns.h"
 
 static void render_dhgr_line(bool p2, uint line, bool mono);
 
@@ -14,6 +15,7 @@ uint16_t DELAYED_COPY_DATA(dhgr_palette)[16] = {
     RGB_MAGENTA,  RGB_HVIOLET,  RGB_DGRAY,     RGB_LBLUE,
     RGB_HORANGE,  RGB_PINK,     RGB_YELLOW,    RGB_WHITE
 };
+uint16_t __attribute__((section(".uninitialized_data."))) half_palette[16];
 
 //#define PAGE2SEL (!(soft_switches & SOFTSW_80STORE) && (soft_switches & SOFTSW_PAGE_2))
 #define PAGE2SEL ((soft_switches & (SOFTSW_80STORE | SOFTSW_PAGE_2)) == SOFTSW_PAGE_2)
@@ -67,6 +69,9 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line, bool mono) {
     uint32_t dots = 0;
     uint_fast8_t dotc = 0;
     uint32_t pixeldata;
+    uint32_t pixelmode = 0;
+    uint16_t white_pixel_count = 0;
+    uint32_t color1, color2, color3, color4;
 
     i = 0;
     if(mono) {
@@ -91,7 +96,6 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line, bool mono) {
             }
         }
     } else if((internal_flags & IFLAGS_VIDEO7) && ((soft_switches & (SOFTSW_80STORE | SOFTSW_80COL)) == (SOFTSW_80STORE))) {
-        uint32_t color1, color2, color3, color4;
         int j;
 
         // Video 7 F/B HiRes
@@ -150,7 +154,118 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line, bool mono) {
                 dotc -= 8;
             }
         }
-    } else if(internal_flags & IFLAGS_OLDCOLOR) {
+    } else if((internal_flags & (IFLAGS_VIDEO7 | IFLAGS_V7_MODE3)) == (IFLAGS_VIDEO7 | IFLAGS_V7_MODE1)) {
+        // Video-7 Mixed B&W/RGB
+        while(i < 40) {
+            // Load in as many subpixels as possible
+            while((dotc <= 18) && (i < 40)) {
+                dots |= (line_memb[i] & 0x7f) << dotc;
+                pixelmode |= ((line_memb[i] & 0x80) ? 0x7f : 0x00) << dotc;
+                dotc += 7;
+                dots |= (line_mema[i] & 0x7f) << dotc;
+                pixelmode |= ((line_mema[i] & 0x80) ? 0x7f : 0x00) << dotc;
+                dotc += 7;
+                i++;
+            }
+
+            // Consume pixels
+            while(dotc >= 4) {
+                if(pixelmode) {
+                    pixeldata = (dhgr_palette[dots & 0xf] | THEN_EXTEND_1);
+                    pixeldata |= pixeldata << 16;
+                    dots >>= 4;
+                    pixelmode >>= 4;
+                    sl->data[sl_pos++] = pixeldata;
+                    dotc -= 4;
+                } else {
+                    pixeldata = ((dots & 1) ? (text_fore) : (text_back));
+                    dots >>= 1;
+                    pixelmode >>= 1;
+                    pixeldata |= (((dots & 1) ? (text_fore) : (text_back))) << 16;
+                    dots >>= 1;
+                    pixelmode >>= 1;
+                    sl->data[sl_pos++] = pixeldata;
+                    dotc -= 2;
+                    pixeldata = ((dots & 1) ? (text_fore) : (text_back));
+                    dots >>= 1;
+                    pixelmode >>= 1;
+                    pixeldata |= (((dots & 1) ? (text_fore) : (text_back))) << 16;
+                    dots >>= 1;
+                    pixelmode >>= 1;
+                    sl->data[sl_pos++] = pixeldata;
+                    dotc -= 2;
+                }
+            }
+        }
+    } else if((internal_flags & (IFLAGS_INTERP | IFLAGS_GRILL)) == (IFLAGS_INTERP | IFLAGS_GRILL)) {
+        // Preload black into the sliding window
+        dots = 0;
+        dotc = 4;
+
+        while(i < 40) {
+            // Load in as many subpixels as possible
+            while((dotc <= 18) && (i < 40)) {
+                dots |= (line_memb[i] & 0x7f) << dotc;
+                dotc += 7;
+                dots |= (line_mema[i] & 0x7f) << dotc;
+                dotc += 7;
+                i++;
+            }
+
+            while((dotc >= 8) || ((dotc > 0) && (i == 40))) {
+                dots &= 0xfffffffe;
+                dots |= (dots >> 4) & 1;
+                pixeldata = half_palette[dots & 0xf];
+                dots &= 0xfffffffc;
+                dots |= (dots >> 4) & 3;
+                pixeldata |= dhgr_palette[dots & 0xf] << 16;
+                sl->data[sl_pos++] = pixeldata;
+
+                dots &= 0xfffffff8;
+                dots |= (dots >> 4) & 7;
+                pixeldata = half_palette[dots & 0xf];
+                dots >>= 4;
+                pixeldata |= dhgr_palette[dots & 0xf] << 16;
+                sl->data[sl_pos++] = pixeldata;
+
+                dotc -= 4;
+            }
+        }
+    } else if(internal_flags & IFLAGS_INTERP) {
+        // Preload black into the sliding window
+        dots = 0;
+        dotc = 4;
+
+        while(i < 40) {
+            // Load in as many subpixels as possible
+            while((dotc <= 18) && (i < 40)) {
+                dots |= (line_memb[i] & 0x7f) << dotc;
+                dotc += 7;
+                dots |= (line_mema[i] & 0x7f) << dotc;
+                dotc += 7;
+                i++;
+            }
+
+            while((dotc >= 8) || ((dotc > 0) && (i == 40))) {
+                dots &= 0xfffffffe;
+                dots |= (dots >> 4) & 1;
+                pixeldata = dhgr_palette[dots & 0xf];
+                dots &= 0xfffffffc;
+                dots |= (dots >> 4) & 3;
+                pixeldata |= dhgr_palette[dots & 0xf] << 16;
+                sl->data[sl_pos++] = pixeldata;
+
+                dots &= 0xfffffff8;
+                dots |= (dots >> 4) & 7;
+                pixeldata = dhgr_palette[dots & 0xf];
+                dots >>= 4;
+                pixeldata |= dhgr_palette[dots & 0xf] << 16;
+                sl->data[sl_pos++] = pixeldata;
+
+                dotc -= 4;
+            }
+        }
+    } else {
         while(i < 40) {
             // Load in as many subpixels as possible
             while((dotc <= 18) && (i < 40)) {
@@ -171,46 +286,6 @@ static void DELAYED_COPY_CODE(render_dhgr_line)(bool p2, uint line, bool mono) {
                 dotc -= 8;
             }
         }
-    } else {
-        // Preload the first 14 subpixels
-        dots |= (line_memb[i] & 0x7f) << dotc;
-        dotc += 7;
-        dots |= (line_mema[i] & 0x7f) << dotc;
-        dotc += 7;
-        i++;
-
-        // First two pixels
-        pixeldata = dhgr_palette[0];
-        pixeldata |= ((dhgr_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
-        sl->data[sl_pos++] = pixeldata;
-
-        while(i < 40) {
-            // Load in as many subpixels as possible
-            while((dotc <= 18) && (i < 40)) {
-                dots |= (line_memb[i] & 0x7f) << dotc;
-                dotc += 7;
-                dots |= (line_mema[i] & 0x7f) << dotc;
-                dotc += 7;
-                i++;
-            }
-
-            // Consume pixels
-            while(dotc >= 8) {
-                pixeldata = (dhgr_palette[dots & 0xf]);
-                pixeldata |= ((dhgr_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
-                sl->data[sl_pos++] = pixeldata;
-                pixeldata = (dhgr_palette[(dots & 0xc) | ((dots & 0x30) >> 4)]);
-                pixeldata |= ((dhgr_palette[(dots & 0xf0) >> 4] >> 1) & _RGBHALF) << 16;
-                sl->data[sl_pos++] = pixeldata;
-                dots >>= 4;
-                dotc -= 4;
-            }
-        }
-
-        // Last two pixels
-        pixeldata = (dhgr_palette[dots & 0xf]);
-        pixeldata |= ((dhgr_palette[dots & 0xf] >> 1) & _RGBHALF) << 16;
-        sl->data[sl_pos++] = pixeldata;
     }
 
     if((internal_flags & IFLAGS_VIDEO7) && ((internal_flags & IFLAGS_V7_MODE3) == IFLAGS_V7_MODE2)) {

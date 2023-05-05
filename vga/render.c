@@ -100,9 +100,17 @@ void DELAYED_COPY_CODE(update_status_left)(const char *str) {
 }
 
 void DELAYED_COPY_CODE(render_init)() {
-    int i;
-
     switch_font();
+
+    // Initialize "Half-Palette" for aperture grill effect
+    for(int i = 1; i < 15; i++) {
+        half_palette[i] = (dhgr_palette[i] >> 1) & _RGBHALF;
+        lhalf_palette[i] = (lores_palette[i] >> 1) & _RGBHALF;
+    }
+    half_palette[0] = dhgr_palette[0];
+    half_palette[15] = dhgr_palette[15];
+    lhalf_palette[0] = lores_palette[0];
+    lhalf_palette[15] = lores_palette[15];
 
     if((soft_switches & SOFTSW_MODE_MASK) == 0)
         internal_flags |= IFLAGS_TEST;
