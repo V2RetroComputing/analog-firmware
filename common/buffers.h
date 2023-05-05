@@ -31,6 +31,9 @@ extern volatile uint8_t *hgr_p4;
 /* Videx VideoTerm */
 extern volatile uint8_t *videx_page;
 
+#define apple_tbcolor  apple_memory[0xC022]
+#define apple_border   apple_memory[0xC034]
+
 #endif
 
 extern volatile uint8_t *baseio;

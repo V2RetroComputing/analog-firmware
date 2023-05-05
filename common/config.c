@@ -201,7 +201,15 @@ void DELAYED_COPY_CODE(default_config)() {
     current_machine = MACHINE_AUTO;
     internal_flags |= (IFLAGS_IIE_REGS | IFLAGS_IIGS_REGS);
 #endif
+#ifdef FUNCTION_VGA
+    apple_tbcolor = 0xf0;
+    apple_border = 0x00;
+
+    terminal_tbcolor = 0xf0;
+    terminal_border = 0x00;
+
     internal_flags |= IFLAGS_VIDEO7 | IFLAGS_V7_MODE3;
+#endif
 }
 
 int DELAYED_COPY_CODE(make_config)(uint32_t rev) {

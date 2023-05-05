@@ -115,12 +115,6 @@ void DELAYED_COPY_CODE(render_init)() {
     if((soft_switches & SOFTSW_MODE_MASK) == 0)
         internal_flags |= IFLAGS_TEST;
 
-    apple_tbcolor = 0xf0;
-    apple_border = 0x00;
-
-    terminal_tbcolor = 0xf0;
-    terminal_border = 0x00;
-
     memcpy(terminal_character_rom, (void*)FLASH_VIDEX_BASE, 4096);
     memset(status_line, 0, sizeof(status_line));
 

@@ -17,9 +17,6 @@ extern uint8_t terminal_fifo_rdptr;
 extern volatile uint8_t terminal_row;
 extern volatile uint8_t terminal_col;
 
-#define apple_tbcolor  apple_memory[0xC022]
-#define apple_border   apple_memory[0xC034]
-
 #define APPLE_FORE       ((apple_tbcolor>>4) & 0xf)
 #define APPLE_BACK       (apple_tbcolor & 0xf)
 #define APPLE_BORDER     (apple_border & 0xf)
