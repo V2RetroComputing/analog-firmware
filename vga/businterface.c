@@ -55,9 +55,12 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
             return;
         }
     }
+    
+    // Nothing left to do for RAM accesses.
+    if(address < 0xc000) return;
 
     // Shadow the soft-switches by observing all read & write bus cycles
-    if((address & 0xff80) == 0xc000) {
+    if(address < 0xc080) {
         switch(address & 0x7f) {
         case 0x00:
             if((internal_flags & (IFLAGS_IIGS_REGS | IFLAGS_IIE_REGS)) && ACCESS_WRITE) {
@@ -210,7 +213,7 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                     break;
                 }
             } else if(romx_unlocked == 3) {
-                if((address & 0xFFF0) == 0xF810) {
+                if((address >> 4) == 0xF81) {
                     romx_textbank = address & 0xF;
                 }
                 if(address == 0xF851) {
@@ -237,10 +240,10 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                     break;
                 }
             } else if(romx_unlocked == 3) {
-                if((address & 0xFFF0) == 0xCFD0) {
+                if((address >> 4) == 0xCFD) {
                     romx_textbank = address & 0xF;
                 }
-                if((address & 0xFFF0) == 0xCFE0) {
+                if((address >> 4) == 0xCFE) {
                     romx_changed = 1;
                     romx_unlocked = 0;
                 }
@@ -299,10 +302,12 @@ void __time_critical_func(vga_businterface)(uint32_t address, uint32_t value) {
                 apple_memory[address] = (terminal_fifo_rdptr - terminal_fifo_wrptr);
                 break;
             case 0x0B:
+#if 0
                 if((value & 0xFF) <= 0x27) {
                     romx_textbank = (value & 0xFF);
                     romx_changed = 1;
                 }
+#endif
                 break;
             case 0x0C:
                 apple_memory[address] = value;

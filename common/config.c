@@ -761,10 +761,18 @@ void DELAYED_COPY_CODE(config_handler)() {
             break;
 
         case 'R':
-            // Reboot and bypass auto-detection of machine type.
-            cfg_machine = current_machine;
-            write_config(true);
-            flash_reboot();
+            switch(config_cmdbuf[1]) {
+                default:
+                    retval = REPLY_ECMD;
+                    break;
+                case 'b':
+                    // Reboot and bypass auto-detection of machine type.
+                    cfg_machine = current_machine;
+                    read_config();
+                    write_config(true);
+                    flash_reboot();
+                    break;
+            }
             break;
 
         case 'I':
