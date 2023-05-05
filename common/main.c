@@ -79,12 +79,15 @@ static void __noinline __time_critical_func(core1_loop)() {
             }
 #ifdef FUNCTION_VGA
         } else if(current_machine == MACHINE_AUTO) {
+#ifdef ANALOG_GS
             if(value & 0x08000000) {
                 // Hardware jumpered for IIGS mode.
                 current_machine = MACHINE_IIGS;
                 internal_flags &= ~IFLAGS_IIE_REGS;
                 internal_flags |= IFLAGS_IIGS_REGS;
-            } else if((apple_memory[0x404] == 0xE5) && (apple_memory[0x0403] == 0xD8)) { // ROMXe
+            } else
+#endif
+            if((apple_memory[0x404] == 0xE5) && (apple_memory[0x0403] == 0xD8)) { // ROMXe
                 current_machine = MACHINE_IIE;
                 internal_flags |= IFLAGS_IIE_REGS;
                 internal_flags &= ~IFLAGS_IIGS_REGS;
@@ -136,7 +139,8 @@ static void __noinline __time_critical_func(core1_loop)() {
                 soft_switches |= SOFTSW_TEXT_MODE;
                 soft_switches &= ~SOFTSW_80COL;
                 soft_switches &= ~SOFTSW_DGR;
-                internal_flags &= ~(IFLAGS_TERMINAL | IFLAGS_TEST | IFLAGS_V7_MODE3);
+                internal_flags &= ~(IFLAGS_TERMINAL | IFLAGS_TEST);
+                internal_flags |= IFLAGS_V7_MODE3;
 #endif
             default:
                 reset_state = 0;
