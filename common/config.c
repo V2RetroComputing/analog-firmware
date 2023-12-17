@@ -375,8 +375,8 @@ bool DELAYED_COPY_CODE(is_primary_config_newer)() {
 }
 #endif
 
-bool DELAYED_COPY_CODE(read_config)() {
-    if(is_config_valid(FLASH_CONFIG_ONETIME)) {
+bool DELAYED_COPY_CODE(read_config)(bool onetime) {
+    if(onetime && is_config_valid(FLASH_CONFIG_ONETIME)) {
         internal_flags &= ~IFLAGS_TEST;
         soft_switches |= SOFTSW_TEXT_MODE;
         if(parse_config(FLASH_CONFIG_ONETIME))
@@ -772,7 +772,7 @@ void DELAYED_COPY_CODE(config_handler)() {
                 case 'b':
                     // Reboot and bypass auto-detection of machine type.
                     cfg_machine = current_machine;
-                    read_config();
+                    read_config(false);
                     write_config(true);
                     flash_reboot();
                     break;

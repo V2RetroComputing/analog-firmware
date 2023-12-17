@@ -218,7 +218,7 @@ int main() {
     dmacpy32(__ram_delayed_copy_start__, __ram_delayed_copy_end__, __ram_delayed_copy_source__);
 
     // Load the config from flash, or defaults
-    read_config();
+    read_config(true);
 
 #if defined(FUNCTION_Z80) && defined(ANALOG_GS)
     uart_init(uart0, sio[0].baudrate);
