@@ -94,7 +94,9 @@ bool DELAYED_COPY_CODE(parse_config)(uint32_t address) {
                 break;
 #ifdef FUNCTION_VGA
             case CFGTOKEN_FONT_00:
-                romx_textbank = (config[i] >> 16) & 0x2F;
+                romx_textbank = (config[i] >> 16) & 0x3F;
+                if (romx_textbank >= FONT_COUNT)
+                   romx_textbank = 0;
                 romx_changed = 1;
                 break;
             case CFGTOKEN_MONO_00:
@@ -310,7 +312,7 @@ int DELAYED_COPY_CODE(make_config)(uint32_t rev) {
 #endif
 
 #ifdef FUNCTION_VGA
-    config_temp[i++] = CFGTOKEN_FONT_00 | ((romx_textbank & 0x2F) << 16);
+    config_temp[i++] = CFGTOKEN_FONT_00 | ((romx_textbank & 0x3F) << 16);
     config_temp[i++] = CFGTOKEN_MONO_00 | ((mono_palette & 0xF) << 20);
     config_temp[i++] = CFGTOKEN_TBCOLOR | ((terminal_tbcolor & 0xFF) << 16);
     config_temp[i++] = CFGTOKEN_BORDER | ((terminal_border & 0xF) << 16);
@@ -669,7 +671,9 @@ void DELAYED_COPY_CODE(config_handler)() {
                     // One-time load of font data (lost at reboot)
                     retval = test_font();
                 case 'S':
-                    romx_textbank = param0 & 0x2F;
+                    romx_textbank = param0 & 0x3F;
+                    if (romx_textbank >= FONT_COUNT)
+                          romx_textbank = 0;
                     romx_changed = 1;
                     retval = REPLY_OK;
 #endif
